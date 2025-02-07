@@ -1,1 +1,1 @@
-import datetime\nfrom gatox.models.organization import Organization, Repository\n\nclass Execution:\n    \
+import datetime\nfrom gatox.models.organization import Organization\nfrom gatox.models.repository import Repository\n\nclass Execution:\n    \

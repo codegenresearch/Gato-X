@@ -104,7 +104,7 @@ class Repository():
 
     def has_pwn_request(self):
         """Return True if there are any pwn request risks."""
-        return bool(self.pwn_req_risk)
+        return len(self.pwn_req_risk) > 0
 
     def set_injection(self, injection_package: dict):
         """Set an injection risk package."""
@@ -112,7 +112,7 @@ class Repository():
 
     def has_injection(self):
         """Return True if there are any injection risks."""
-        return bool(self.injection_risk)
+        return len(self.injection_risk) > 0
 
     def set_secrets(self, secrets: list[Secret]):
         """Set secrets that are attached to this repository.

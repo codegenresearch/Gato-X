@@ -35,39 +35,26 @@ class Job():
     def __init__(self, job_data: dict, job_name: str):
         """Constructor for job wrapper.
         """
+        if not isinstance(job_data, dict):
+            raise ValueError("job_data must be a dictionary")
+
         self.job_name = job_name
         self.job_data = job_data
-        self.needs = []
-        self.steps = []
-        self.env = {}
-        self.permissions = []
+        self.needs = job_data.get('needs', [])
+        self.steps = [Step(step) for step in job_data.get('steps', [])]
+        self.env = job_data.get('env', {})
+        self.permissions = job_data.get('permissions', [])
         self.deployments = []
-        self.if_condition = None
-        self.uses = None
-        self.caller = False
-        self.external_caller = False
-        self.has_gate = False
+        self.if_condition = job_data.get('if')
+        self.uses = job_data.get('uses')
+        self.caller = self.uses and self.uses.startswith('./')
+        self.external_caller = self.uses and not self.caller
+        self.has_gate = any(step.is_gate for step in self.steps)
         self.evaluated = False
+        self.has_self_hosted = False
+        self.has_larger_runner = False
+        self.has_matrix = False
 
-        self.__initialize_attributes()
-        self.__process_job_data()
-
-    def __initialize_attributes(self):
-        """Initialize job attributes with default values."""
-        self.needs = []
-        self.steps = []
-        self.env = {}
-        self.permissions = []
-        self.deployments = []
-        self.if_condition = None
-        self.uses = None
-        self.caller = False
-        self.external_caller = False
-        self.has_gate = False
-        self.evaluated = False
-
-    def __process_job_data(self):
-        """Process job data to set attributes."""
         if 'environment' in self.job_data:
             env_data = self.job_data['environment']
             if isinstance(env_data, list):
@@ -75,17 +62,8 @@ class Job():
             else:
                 self.deployments.append(env_data)
 
-        self.env = self.job_data.get('env', {})
-        self.permissions = self.job_data.get('permissions', [])
-        self.if_condition = self.job_data.get('if')
-        self.uses = self.job_data.get('uses')
-        self.caller = self.uses and self.uses.startswith('./')
-        self.external_caller = self.uses and not self.caller
-        self.needs = self.job_data.get('needs', [])
-
-        if 'steps' in self.job_data:
-            self.steps = [Step(step) for step in self.job_data['steps']]
-            self.has_gate = any(step.is_gate for step in self.steps)
+        self.__process_runner()
+        self.__process_matrix()
 
     def evaluateIf(self):
         """Evaluate the If expression by parsing it into an AST
@@ -99,7 +77,11 @@ class Job():
                     self.if_condition = f"EVALUATED: {self.if_condition}"
                 else:
                     self.if_condition = f"RESTRICTED: {self.if_condition}"
-            except (ValueError, NotImplementedError, SyntaxError, IndexError):
+            except ValueError:
+                self.if_condition = self.if_condition
+            except NotImplementedError:
+                self.if_condition = self.if_condition
+            except (SyntaxError, IndexError):
                 self.if_condition = self.if_condition
             finally:
                 self.evaluated = True
@@ -125,10 +107,7 @@ class Job():
 
     def isSelfHosted(self):
         """Check if the job uses a self-hosted runner."""
-        runner = self.job_data.get('runs-on', '')
-        if isinstance(runner, list):
-            return any('self-hosted' in r for r in runner)
-        return 'self-hosted' in runner
+        return self.has_self_hosted
 
     def __process_runner(self):
         """

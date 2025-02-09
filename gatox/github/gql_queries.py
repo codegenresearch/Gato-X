@@ -1,5 +1,5 @@
-class GqlQueries():
-    """Constructs graphql queries for use with the GitHub GraphQL api.
+class GqlQueries:
+    """Constructs GraphQL queries for use with the GitHub GraphQL API.
     """
 
     GET_YMLS_WITH_SLUGS = """
@@ -11,7 +11,6 @@ class GqlQueries():
         isPrivate
         isArchived
         viewerPermission
-        forkingAllowed
         url
         isFork
         pushedAt
@@ -43,7 +42,6 @@ class GqlQueries():
                 nameWithOwner
                 isPrivate
                 isArchived
-                forkingAllowed
                 stargazers {
                     totalCount
                 }
@@ -75,42 +73,40 @@ class GqlQueries():
     """
 
     GET_YMLS_ENV = """
-        query RepoFiles($node_ids: [ID!]!) {
-            nodes(ids: $node_ids) {
-                ... on Repository {
-                    nameWithOwner
-                    isPrivate
-                    isArchived
-                    forkingAllowed
-                    stargazers {
-                        totalCount
-                    }
-                    viewerPermission
-                    pushedAt
-                    url
-                    isFork
-                    environments(first: 100) {
-                        edges {
+    query RepoFiles($node_ids: [ID!]!) {
+        nodes(ids: $node_ids) {
+            ... on Repository {
+                nameWithOwner
+                isPrivate
+                isArchived
+                stargazers {
+                    totalCount
+                }
+                viewerPermission
+                pushedAt
+                url
+                isFork
+                environments(first: 100) {
+                    edges {
                         node {
                             id
                             name
                         }
                     }
-                    }
-                    defaultBranchRef {
-                        name
-                    }
-                    object(expression: "HEAD:.github/workflows/") {
-                        ... on Tree {
-                            entries {
-                                name
-                                type
-                                mode
-                                object {
-                                    ... on Blob {
-                                        byteSize
-                                        text
-                                    }
+                }
+                defaultBranchRef {
+                    name
+                }
+                object(expression: "HEAD:.github/workflows/") {
+                    ... on Tree {
+                        entries {
+                            name
+                            type
+                            mode
+                            object {
+                                ... on Blob {
+                                    byteSize
+                                    text
                                 }
                             }
                         }
@@ -118,6 +114,7 @@ class GqlQueries():
                 }
             }
         }
+    }
     """
 
     @staticmethod
@@ -127,7 +124,7 @@ class GqlQueries():
         files from a list of repositories.
 
         This method splits the list of repositories into chunks of 
-        up to 100 repositories each, and constructs a separate
+        up to 50 repositories each, and constructs a separate
         GraphQL query for each chunk. Each query fetches the workflow 
         YAML files from the repositories in one chunk.
 
@@ -158,18 +155,19 @@ class GqlQueries():
 
             queries.append(
                 {"query": GqlQueries.GET_YMLS_WITH_SLUGS + "{\n" + "\n".join(repo_queries) + "\n}"}
-                )
+            )
 
         return queries
 
     @staticmethod
     def get_workflow_ymls(repos: list):
-        """Retrieve workflow yml files for each repository.
+        """Retrieve workflow YAML files for each repository.
 
         Args:
             repos (List[Repository]): List of repository objects
+
         Returns:
-            (list): List of JSON post parameters for each graphQL query.
+            (list): List of JSON post parameters for each GraphQL query.
         """
         queries = []
 
@@ -177,16 +175,14 @@ class GqlQueries():
             return queries
 
         for i in range(0, (len(repos) // 100) + 1):
+            top_len = len(repos) if len(repos) < (100 + i * 100) else (100 + i * 100)
+            node_ids = [repo.repo_data['node_id'] for repo in repos[i * 100:top_len]]
+            can_push = any(repo.can_push() for repo in repos[i * 100:top_len])
 
-            top_len = len(repos) if len(repos) < (100 + i*100) else (100 + i*100)
             query = {
-                # We list envs if we have write access to one in the set (for secrets
-                # reasons, otherwise we don't list them)
-                "query": GqlQueries.GET_YMLS_ENV if repos[i].can_push() else GqlQueries.GET_YMLS,
+                "query": GqlQueries.GET_YMLS_ENV if can_push else GqlQueries.GET_YMLS,
                 "variables": {
-                    "node_ids": [
-                        repo.repo_data['node_id'] for repo in repos[0+100*i:top_len]
-                    ]
+                    "node_ids": node_ids
                 }
             }
 

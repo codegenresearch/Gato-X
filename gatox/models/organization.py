@@ -13,20 +13,16 @@ class Organization():
             user_scopes (list): List of OAuth scopes that the PAT has
             limited_data (bool): Whether limited org_data is present (default: False)
         """
-        self.name = None
+        self.name = org_data['login']
         self.org_admin_user = False
         self.org_admin_scopes = False
         self.org_member = False
         self.secrets: list[Secret] = []
         self.runners: list[Runner] = []
         self.sso_enabled = False
-
         self.limited_data = limited_data
-
         self.public_repos = []
         self.private_repos = []
-
-        self.name = org_data['login']
 
         # Determine if the user is an admin or member based on billing_email
         if "billing_email" in org_data and org_data["billing_email"] is not None:
@@ -36,6 +32,7 @@ class Organization():
                 self.org_admin_user = True
         elif "billing_email" in org_data:
             self.org_member = True
+        # If billing_email is not present, the user is neither an admin nor a member
         else:
             self.org_member = False
 
@@ -43,7 +40,7 @@ class Organization():
         """Set repo-level secrets.
 
         Args:
-            secrets (list): List of secrets at the organization level.
+            secrets (list[Secret]): List of secrets at the organization level.
         """
         self.secrets = secrets
 
@@ -62,7 +59,7 @@ class Organization():
         """Set the list of public repos for the org.
 
         Args:
-            repos (List[Repository]): List of Repository wrapper objects.
+            repos (list[Repository]): List of Repository wrapper objects.
         """
         self.public_repos = repos
 
@@ -70,7 +67,7 @@ class Organization():
         """Set the list of private repos for the org.
 
         Args:
-            repos (List[Repository]): List of Repository wrapper objects.
+            repos (list[Repository]): List of Repository wrapper objects.
         """
         self.private_repos = repos
 
@@ -78,8 +75,7 @@ class Organization():
         """Set a list of runners that the organization can access.
 
         Args:
-            runners (List[Runner]): List of runners that are attached to the
-            organization.
+            runners (list[Runner]): List of runners that are attached to the organization.
         """
         self.runners = runners
 
@@ -99,7 +95,10 @@ class Organization():
         return False
 
     def toJSON(self):
-        """Converts the repository to a Gato JSON representation.
+        """Converts the organization to a Gato JSON representation.
+
+        Returns:
+            dict: JSON representation of the organization.
         """
         if self.limited_data:
             representation = {

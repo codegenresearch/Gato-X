@@ -6,11 +6,11 @@ class DataIngestor:
 
     @staticmethod
     def construct_workflow_cache(yml_results):
-        """Creates a cache of workflow yml files retrieved from graphQL. Since
-        graphql and REST do not have parity, we still need to use rest for most
+        """Creates a cache of workflow yml files retrieved from GraphQL. Since
+        GraphQL and REST do not have parity, we still need to use REST for most
         enumeration calls. This method saves off all yml files, so during org
         level enumeration if we perform yml enumeration the cached file is used
-        instead of making github REST requests. 
+        instead of making GitHub REST requests.
 
         Args:
             yml_results (list): List of results from individual GraphQL queries
@@ -62,7 +62,7 @@ class DataIngestor:
 
             if 'environments' in result and result['environments']:
                 # Capture environments not named github-pages
-                envs = [env['node']['name']  for env in result['environments']['edges'] if env['node']['name'] != 'github-pages']
+                envs = [env['node']['name'] for env in result['environments']['edges'] if env['node']['name'] != 'github-pages']
                 repo_data['environments'] = envs
                     
             repo_wrapper = Repository(repo_data)

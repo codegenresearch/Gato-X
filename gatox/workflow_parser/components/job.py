@@ -14,13 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import re
 from gatox.workflow_parser.components.step import Step
 from gatox.workflow_parser.expression_parser import ExpressionParser
 from gatox.workflow_parser.expression_evaluator import ExpressionEvaluator
+from gatox.configuration.configuration_manager import ConfigurationManager
 
 class Job():
     """Wrapper class for a Github Actions workflow job.
     """
+    LARGER_RUNNER_REGEX_LIST = re.compile(
+        r'(windows|ubuntu)-(22\.04|20\.04|2019-2022)-(4|8|16|32|64)core-(16|32|64|128|256)gb'
+    )
+    MATRIX_KEY_EXTRACTION_REGEX = re.compile(
+        r'{{\s*matrix\.([\w-]+)\s*}}'
+    )
+
     EVALUATOR = ExpressionEvaluator()
 
     def __init__(self, job_data: dict, job_name: str):
@@ -28,19 +37,55 @@ class Job():
         """
         self.job_name = job_name
         self.job_data = job_data
-        self.needs = job_data.get('needs', [])
-        self.steps = [Step(step) for step in job_data.get('steps', [])]
-        self.env = job_data.get('env', {})
-        self.permissions = job_data.get('permissions', [])
-        self.deployments = job_data.get('environment', [])
-        if not isinstance(self.deployments, list):
-            self.deployments = [self.deployments]
-        self.if_condition = job_data.get('if')
-        self.uses = job_data.get('uses')
+        self.needs = []
+        self.steps = []
+        self.env = {}
+        self.permissions = []
+        self.deployments = []
+        self.if_condition = None
+        self.uses = None
+        self.caller = False
+        self.external_caller = False
+        self.has_gate = False
+        self.evaluated = False
+
+        self.__initialize_attributes()
+        self.__process_job_data()
+
+    def __initialize_attributes(self):
+        """Initialize job attributes with default values."""
+        self.needs = []
+        self.steps = []
+        self.env = {}
+        self.permissions = []
+        self.deployments = []
+        self.if_condition = None
+        self.uses = None
+        self.caller = False
+        self.external_caller = False
+        self.has_gate = False
+        self.evaluated = False
+
+    def __process_job_data(self):
+        """Process job data to set attributes."""
+        if 'environment' in self.job_data:
+            env_data = self.job_data['environment']
+            if isinstance(env_data, list):
+                self.deployments.extend(env_data)
+            else:
+                self.deployments.append(env_data)
+
+        self.env = self.job_data.get('env', {})
+        self.permissions = self.job_data.get('permissions', [])
+        self.if_condition = self.job_data.get('if')
+        self.uses = self.job_data.get('uses')
         self.caller = self.uses and self.uses.startswith('./')
         self.external_caller = self.uses and not self.caller
-        self.has_gate = any(step.is_gate for step in self.steps)
-        self.evaluated = False
+        self.needs = self.job_data.get('needs', [])
+
+        if 'steps' in self.job_data:
+            self.steps = [Step(step) for step in self.job_data['steps']]
+            self.has_gate = any(step.is_gate for step in self.steps)
 
     def evaluateIf(self):
         """Evaluate the If expression by parsing it into an AST
@@ -55,7 +100,7 @@ class Job():
                 else:
                     self.if_condition = f"RESTRICTED: {self.if_condition}"
             except (ValueError, NotImplementedError, SyntaxError, IndexError):
-                pass
+                self.if_condition = self.if_condition
             finally:
                 self.evaluated = True
 
@@ -81,4 +126,44 @@ class Job():
     def isSelfHosted(self):
         """Check if the job uses a self-hosted runner."""
         runner = self.job_data.get('runs-on', '')
+        if isinstance(runner, list):
+            return any('self-hosted' in r for r in runner)
         return 'self-hosted' in runner
+
+    def __process_runner(self):
+        """
+        Processes the runner for the job.
+        """
+        runner = self.job_data.get('runs-on', '')
+        if isinstance(runner, list):
+            for r in runner:
+                self.__check_runner(r)
+        else:
+            self.__check_runner(runner)
+
+    def __check_runner(self, runner):
+        """
+        Checks if the runner is self-hosted or a larger runner.
+        """
+        if 'self-hosted' in runner:
+            self.has_self_hosted = True
+        elif self.LARGER_RUNNER_REGEX_LIST.match(runner):
+            self.has_larger_runner = True
+
+    def __process_matrix(self):
+        """
+        Processes matrix jobs.
+        """
+        if 'strategy' in self.job_data and 'matrix' in self.job_data['strategy']:
+            matrix = self.job_data['strategy']['matrix']
+            for key, values in matrix.items():
+                if isinstance(values, list):
+                    for value in values:
+                        self.__process_matrix_value(key, value)
+
+    def __process_matrix_value(self, key, value):
+        """
+        Processes individual matrix values.
+        """
+        if self.MATRIX_KEY_EXTRACTION_REGEX.search(value):
+            self.has_matrix = True

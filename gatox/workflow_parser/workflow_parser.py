@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 class WorkflowParser():
     """Parser for YML files.
 
-    This class is structurd to take a yaml file as input, it will then
+    This class is structured to take a yaml file as input, it will then
     expose methods that aim to answer questions about the yaml file.
 
     This will allow for growing what kind of analytics this tool can perform
@@ -67,6 +67,8 @@ class WorkflowParser():
         self.wf_name = workflow_wrapper.workflow_name
         self.callees = []
         self.external_ref = False
+        self.visibility = workflow_wrapper.visibility
+        self.permissions = workflow_wrapper.permissions
        
         if workflow_wrapper.special_path:
             self.external_ref = True
@@ -142,8 +144,7 @@ class WorkflowParser():
         """
         vulnerable_triggers = []
         risky_triggers = ['pull_request_target', 'workflow_run', 
-                          'issue_comment', 'issues', 'discussion_comment', 'discussion'
-                          'fork', 'watch']
+                          'issue_comment', 'issues']
         if alternate:
             risky_triggers = [alternate]
 
@@ -180,7 +181,7 @@ class WorkflowParser():
             for job in self.jobs:
                 if job.job_name == needs_name and job.gated():
                     return True
-                # If the job it needs does't have a gate, then check if it does.
+                # If the job it needs doesn't have a gate, then check if it does.
                 elif job.job_name == needs_name and not job.gated():
                     return self.backtrack_gate(job.needs)
         return False

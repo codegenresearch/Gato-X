@@ -106,9 +106,7 @@ class Enumerator:
         """
         with ThreadPoolExecutor(max_workers=3) as executor:
             Output.info(f"Querying repositories in {len(queries)} batches!")
-            futures = []
-            for i, wf_query in enumerate(queries):
-                futures.append(executor.submit(DataIngestor.perform_query, self.api, wf_query, i))
+            futures = [executor.submit(DataIngestor.perform_query, self.api, wf_query, i) for i, wf_query in enumerate(queries)]
             for future in as_completed(futures):
                 Output.info(
                     f"Processed {DataIngestor.check_status()}/{len(queries)} batches.",
@@ -342,6 +340,6 @@ class Enumerator:
 3. **Return Values**: Ensured that the return values in methods like `validate_only` and `self_enumeration` are consistent with the gold code.
 4. **Output Messages**: Ensured that output messages are consistent with the tone, format, and content of the gold code.
 5. **List Comprehensions**: Used a list comprehension in the `validate_only` method to create the list of organizations.
-6. **Error Handling**: Reviewed and adjusted error and warning messages to ensure they are consistent with the gold code's style and content.
+6. **Error Handling**: Reviewed and adjusted error and warning messages to ensure they are consistent with the style and content of the gold code.
 7. **Loop Structures**: Ensured that the way futures are handled in the `__query_graphql_workflows` method is consistent with the gold code's approach.
 8. **Variable Naming and Structure**: Double-checked that variable names and the overall structure of methods align with the gold code.

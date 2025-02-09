@@ -38,38 +38,41 @@ class WorkflowParser:
     LARGER_RUNNER_REGEX_LIST = re.compile(r'(windows|ubuntu)-(22.04|20.04|2019-2022)-(4|8|16|32|64)core-(16|32|64|128|256)gb')
     MATRIX_KEY_EXTRACTION_REGEX = re.compile(r'{{\s*matrix\.([\w-]+)\s*}}')
 
-    def __init__(self, workflow_wrapper: Workflow, non_default=None):
+    def __init__(self, workflow_yml: Workflow, non_default=None):
         """Initialize the parser with a workflow.
 
         Args:
-            workflow_wrapper (Workflow): The workflow to parse.
+            workflow_yml (Workflow): The workflow to parse.
             non_default (str, optional): Non-default branch name.
 
         Raises:
-            ValueError: If the workflow is invalid or does not contain jobs.
+            ValueError: If the workflow is invalid or does not contain valid job data.
         """
-        if workflow_wrapper.isInvalid():
+        if workflow_yml.isInvalid():
             raise ValueError("The provided workflow is invalid or does not contain valid data.")
 
-        self.parsed_yml = workflow_wrapper.parsed_yml
-        self.raw_yaml = workflow_wrapper.workflow_contents
-        self.repo_name = workflow_wrapper.repo_name
-        self.wf_name = workflow_wrapper.workflow_name
+        self.parsed_yml = workflow_yml.parsed_yml
+        self.raw_yaml = workflow_yml.workflow_contents
+        self.repo_name = workflow_yml.repo_name
+        self.wf_name = workflow_yml.workflow_name
         self.callees = []
         self.external_ref = False
-        self.visibility = workflow_wrapper.visibility if hasattr(workflow_wrapper, 'visibility') else 'public'
-        self.permissions = workflow_wrapper.permissions if hasattr(workflow_wrapper, 'permissions') else {}
+        self.visibility = workflow_yml.visibility if hasattr(workflow_yml, 'visibility') else 'public'
+        self.permissions = workflow_yml.permissions if hasattr(workflow_yml, 'permissions') else {}
 
-        if workflow_wrapper.special_path:
+        if workflow_yml.special_path:
             self.external_ref = True
-            self.external_path = workflow_wrapper.special_path
-            self.branch = workflow_wrapper.branch
+            self.external_path = workflow_yml.special_path
+            self.branch = workflow_yml.branch
         elif non_default:
             self.branch = non_default
         else:
             self.branch = None
 
-        self.jobs = [Job(job_data, job_name) for job_name, job_data in self.parsed_yml.get('jobs', {}).items()]
+        jobs_data = self.parsed_yml.get('jobs')
+        if not isinstance(jobs_data, dict):
+            raise ValueError("The workflow does not contain valid job data.")
+        self.jobs = [Job(job_data, job_name) for job_name, job_data in jobs_data.items()]
         self.composites = self.extract_referenced_actions()
 
     def is_referenced(self):

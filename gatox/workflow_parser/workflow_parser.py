@@ -46,10 +46,10 @@ class WorkflowParser:
             non_default (str, optional): Non-default branch name.
 
         Raises:
-            ValueError: If the workflow is invalid or does not contain valid job data.
+            ValueError: If the workflow is invalid.
         """
         if workflow_yml.isInvalid():
-            raise ValueError("The provided workflow is invalid or does not contain valid data.")
+            raise ValueError("The provided workflow is invalid.")
 
         self.parsed_yml = workflow_yml.parsed_yml
         self.raw_yaml = workflow_yml.workflow_contents
@@ -69,10 +69,12 @@ class WorkflowParser:
         else:
             self.branch = None
 
-        jobs_data = self.parsed_yml.get('jobs')
+        jobs_data = self.parsed_yml.get('jobs', {})
         if not isinstance(jobs_data, dict):
-            raise ValueError("The workflow does not contain valid job data.")
-        self.jobs = [Job(job_data, job_name) for job_name, job_data in jobs_data.items()]
+            logger.warning("No valid job data found in the workflow.")
+            self.jobs = []
+        else:
+            self.jobs = [Job(job_data, job_name) for job_name, job_data in jobs_data.items()]
         self.composites = self.extract_referenced_actions()
 
     def is_referenced(self):

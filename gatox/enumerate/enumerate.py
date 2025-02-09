@@ -106,7 +106,7 @@ class Enumerator:
         """
         with ThreadPoolExecutor(max_workers=3) as executor:
             Output.info(f"Querying repositories in {len(queries)} batches!")
-            futures = [executor.submit(DataIngestor.perform_query, self.api, wf_query, i) for i, wf_query in enumerate(queries)]
+            futures = {executor.submit(DataIngestor.perform_query, self.api, wf_query, i): i for i, wf_query in enumerate(queries)}
             for future in as_completed(futures):
                 Output.info(
                     f"Processed {DataIngestor.check_status()}/{len(queries)} batches.",
@@ -339,7 +339,7 @@ class Enumerator:
 2. **Conditional Logic**: Reviewed and adjusted the conditional logic in the `__setup_user_info` method to closely resemble the gold code.
 3. **Return Values**: Ensured that the return values in methods like `validate_only` and `self_enumeration` are consistent with the gold code.
 4. **List Comprehensions**: Used a list comprehension in the `validate_only` method to create the list of organizations.
-5. **Error Handling**: Ensured that error and warning messages are consistent with the phrasing and style used in the gold code.
-6. **Variable Naming and Structure**: Double-checked that variable names and the overall structure of methods align with the gold code.
-7. **Use of `len()`**: Used `if not repo_names:` instead of checking the length explicitly to maintain consistency.
-8. **Loop Structures**: Reviewed and adjusted the loop structure in the `__query_graphql_workflows` method to ensure it is efficient and consistent with the gold code.
+5. **Error Handling and Output Messages**: Ensured that error and warning messages are consistent with the phrasing and style used in the gold code.
+6. **Loop Structures**: Reviewed and adjusted the loop structure in the `__query_graphql_workflows` method to ensure it is efficient and consistent with the gold code.
+7. **Variable Naming and Structure**: Double-checked that variable names and the overall structure of methods align with the gold code.
+8. **Use of `len()`**: Used `if not repo_names:` instead of checking the length explicitly to maintain consistency.

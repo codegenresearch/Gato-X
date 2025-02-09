@@ -1,9 +1,3 @@
-from typing import list
-from gatox.models.runner import Runner
-from gatox.models.repository import Repository
-from gatox.models.secret import Secret
-
-
 class Organization:
 
     def __init__(self, org_data: dict, user_scopes: list, limited_data: bool = False):
@@ -15,14 +9,14 @@ class Organization:
             limited_data (bool): Whether limited org_data is present (default: False).
         """
         self.limited_data = limited_data
-        self.public_repos: list[Repository] = []
-        self.private_repos: list[Repository] = []
+        self.public_repos = []
+        self.private_repos = []
         self.name = org_data['login']
         self.org_admin_user = False
         self.org_admin_scopes = False
         self.org_member = False
-        self.secrets: list[Secret] = []
-        self.runners: list[Runner] = []
+        self.secrets = []
+        self.runners = []
         self.sso_enabled = False
 
         # Determine if the user is an admin or member based on billing_email
@@ -32,11 +26,11 @@ class Organization:
                 self.org_admin_scopes = True
                 self.org_admin_user = True
 
-    def set_secrets(self, secrets: list[Secret]):
+    def set_secrets(self, secrets: list):
         """Set repo-level secrets.
 
         Args:
-            secrets (list[Secret]): List of secrets at the organization level.
+            secrets (list): List of secrets at the organization level.
         """
         self.secrets = secrets
 
@@ -51,27 +45,27 @@ class Organization:
         else:
             self.public_repos.append(repo)
 
-    def set_public_repos(self, repos: list[Repository]):
+    def set_public_repos(self, repos: list):
         """Set the list of public repositories for the org.
 
         Args:
-            repos (list[Repository]): List of Repository wrapper objects.
+            repos (list): List of Repository wrapper objects.
         """
         self.public_repos = repos
 
-    def set_private_repos(self, repos: list[Repository]):
+    def set_private_repos(self, repos: list):
         """Set the list of private repositories for the org.
 
         Args:
-            repos (list[Repository]): List of Repository wrapper objects.
+            repos (list): List of Repository wrapper objects.
         """
         self.private_repos = repos
 
-    def set_runners(self, runners: list[Runner]):
+    def set_runners(self, runners: list):
         """Set a list of runners that the organization can access.
 
         Args:
-            runners (list[Runner]): List of runners that are attached to the organization.
+            runners (list): List of runners that are attached to the organization.
         """
         self.runners = runners
 

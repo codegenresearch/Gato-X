@@ -16,6 +16,7 @@ class Repository():
             repo_data (dict): Dictionary from parsing JSON object returned from GitHub
         """
         self.repo_data = repo_data
+        # Temporary hack until full transition to GQL
         if 'environments' not in self.repo_data:
             self.repo_data['environments'] = []
 
@@ -52,7 +53,7 @@ class Repository():
 
     def is_private(self):
         """Check if the repository is private."""
-        return self.repo_data['visibility'] != 'public'
+        return self.repo_data['private']
 
     def is_archived(self):
         """Check if the repository is archived."""

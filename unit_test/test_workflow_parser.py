@@ -5,7 +5,6 @@ import pathlib
 from unittest.mock import patch, mock_open, ANY
 from gatox.workflow_parser.workflow_parser import WorkflowParser
 from gatox.models.workflow import Workflow
-from gatox.workflow_parser.utility import check_sus
 
 # Test workflows
 TEST_WF = """

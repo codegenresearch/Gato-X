@@ -78,12 +78,12 @@ class Enumerator:
 
             Output.info(
                 "The authenticated user is: "
-                f"{Output.bright(self.user_perms['user'])}"
+                f"{Output.bright(self.user_perms['user'])}."
             )
             if self.user_perms["scopes"]:
                 Output.info(
                     "The GitHub Classic PAT has the following scopes: "
-                    f'{Output.yellow(", ".join(self.user_perms["scopes"]))}'
+                    f'{Output.yellow(", ".join(self.user_perms["scopes"]))}.'
                 )
             else:
                 Output.warn("The token has no scopes!")
@@ -107,7 +107,7 @@ class Enumerator:
 
         Output.info(
             f'The user {self.user_perms["user"]} belongs to {len(orgs)} '
-            'organizations!'
+            'organizations!.'
         )
 
         for org in orgs:
@@ -134,7 +134,7 @@ class Enumerator:
 
         Output.info(
             f'The user {self.user_perms["user"]} belongs to {len(orgs)} '
-            'organizations!'
+            'organizations!.'
         )
 
         for org in orgs:
@@ -162,7 +162,7 @@ class Enumerator:
         if not details:
             Output.warn(
                 f"Unable to query the org: {Output.bright(org)}! Ensure the "
-                "organization exists!"
+                "organization exists!. "
             )
             return False
 
@@ -183,7 +183,7 @@ class Enumerator:
             f"About to enumerate "
             f"{len(organization.private_repos) + len(organization.public_repos)}"
             " repos within "
-            f"the {organization.name} organization!"
+            f"the {organization.name} organization!. "
         )
 
         Output.info(f"Querying and caching workflow YAML files!")
@@ -198,7 +198,7 @@ class Enumerator:
             else:
                 Output.warn(
                     "GraphQL query failed, will revert to "
-                    "REST workflow query for impacted repositories!"
+                    "REST workflow query for impacted repositories!. "
                 )
         try:
             for repo in enum_list:
@@ -332,7 +332,7 @@ class Enumerator:
                 Output.error(f"An error occurred: {str(e)}")
                 Output.warn(
                     "GraphQL query failed, will revert to REST "
-                    "workflow query for impacted repositories!"
+                    "workflow query for impacted repositories!. "
                 )
 
         repo_wrappers = []
@@ -369,7 +369,7 @@ class Enumerator:
         for workflow in workflows:
             triggers = workflow.get_vulnerable_triggers()
             if triggers:
-                Output.warn(f"Vulnerable triggers detected in workflow {workflow.wf_name}: {triggers}")
+                Output.warn(f"Vulnerable triggers detected in workflow {workflow.wf_name}: {triggers}.")
 
     def __streamline_repo_data_management(self, organization: Organization):
         """Streamline repository data management in organizations.
@@ -379,6 +379,8 @@ class Enumerator:
         """
         organization.update_repo_data()
         Output.info(f"Updated repository data for organization {organization.name}.")
+
+# Removed standalone comment block to resolve syntax error
 
 
 ### Key Changes Made:

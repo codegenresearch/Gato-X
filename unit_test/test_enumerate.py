@@ -204,8 +204,9 @@ def test_enumerate_repo_no_wf_maintain(mock_api, capsys):
     assert " The user is a maintainer on the" in escape_ansi(print_output)
 
 
+@patch("gatox.enumerate.ingest.ingest.time")
 @patch("gatox.enumerate.enumerate.Api")
-def test_enumerate_repo_only(mock_api, capsys):
+def test_enumerate_repo_only(mock_api, mock_time, capsys):
     """Test enumeration of a single repository."""
     repo_data = json.loads(json.dumps(TEST_REPO_DATA))
     gh_enumeration_runner = Enumerator(
@@ -267,7 +268,7 @@ def test_enum_repo(mock_api, mock_time, capfd):
         "scopes": ["repo", "workflow"],
     }
     mock_api.return_value.is_app_token.return_value = False
-    mock_api.return.ComponentPlacement_value.get_repository.return_value = TEST_REPO_DATA
+    mock_api.return_value.get_repository.return_value = TEST_REPO_DATA
 
     gh_enumeration_runner = Enumerator(
         "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",

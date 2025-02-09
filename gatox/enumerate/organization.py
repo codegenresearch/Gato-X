@@ -21,18 +21,21 @@ class OrganizationEnum:
         self.api = api
 
     def __assemble_repo_list(
-            self, organization: str, visibility: str) -> List[Repository]:
-        """Get a list of repositories with the specified visibility.
+            self, organization: str, visibilities: List[str]) -> List[Repository]:
+        """Get a list of repositories with the specified visibilities.
 
         Args:
             organization (str): Name of the organization.
-            visibility (str): Visibility type (public, private, internal).
+            visibilities (List[str]): List of visibility types (public, private, internal).
 
         Returns:
-            List[Repository]: List of repositories with the specified visibility.
+            List[Repository]: List of repositories with the specified visibilities.
         """
-        raw_repos = self.api.check_org_repos(organization, visibility)
-        return [Repository(repo, visibility=visibility) for repo in raw_repos]
+        repos = []
+        for visibility in visibilities:
+            raw_repos = self.api.check_org_repos(organization, visibility)
+            repos.extend([Repository(repo) for repo in raw_repos])
+        return repos
 
     def construct_repo_enum_list(
             self, organization: Organization) -> List[Repository]:
@@ -45,14 +48,9 @@ class OrganizationEnum:
         Returns:
             List[Repository]: List of repositories to enumerate.
         """
-        visibilities = ['private', 'internal', 'public']
-        all_repos = []
-
-        for visibility in visibilities:
-            all_repos.extend(self.__assemble_repo_list(organization.name, visibility))
-
-        org_private_repos = [repo for repo in all_repos if repo.visibility in ['private', 'internal']]
-        org_public_repos = [repo for repo in all_repos if repo.visibility == 'public']
+        org_private_repos = self.__assemble_repo_list(
+            organization.name, ['private', 'internal']
+        )
 
         # We might legitimately have no private repos despite being a member.
         if org_private_repos:
@@ -62,6 +60,10 @@ class OrganizationEnum:
             organization.sso_enabled = sso_enabled
         else:
             org_private_repos = []
+
+        org_public_repos = self.__assemble_repo_list(
+            organization.name, ['public']
+        )
 
         organization.set_public_repos(org_public_repos)
         organization.set_private_repos(org_private_repos)
@@ -101,8 +103,9 @@ class OrganizationEnum:
 
 
 ### Key Changes:
-1. **Repository Initialization**: Modified the `__assemble_repo_list` method to pass the `visibility` attribute to the `Repository` constructor.
-2. **Docstring Consistency**: Ensured consistent wording and formatting in docstrings.
-3. **Variable Naming**: Used consistent naming conventions for variables.
-4. **Comment Clarity**: Improved comments for clarity.
-5. **Code Structure**: Refactored the `construct_repo_enum_list` method for better clarity and maintainability.
+1. **Visibility Parameter**: Changed the parameter from `visibility` to `visibilities` in the `__assemble_repo_list` method to accept a list of visibility types.
+2. **Repository Initialization**: Removed the `visibility` attribute from the `Repository` constructor call in the `__assemble_repo_list` method.
+3. **Docstring Consistency**: Ensured consistent wording and formatting in docstrings.
+4. **Variable Naming**: Used `repos` instead of `all_repos` for better conciseness.
+5. **Code Structure**: Refactored the `construct_repo_enum_list` method to call `__assemble_repo_list` for both private/internal and public repositories separately.
+6. **Comment Clarity**: Improved comments for clarity and removed invalid syntax comments.

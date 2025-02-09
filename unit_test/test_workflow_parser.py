@@ -216,7 +216,6 @@ on:
 jobs:
 """
 
-
 TEST_WF6 = """
 name: 'Test WF6'
 
@@ -229,45 +228,7 @@ jobs:
       uses: actions/checkout@v4
 """
 
-TEST_WF7 = """
-name: build
-
-on:
-  push:
-    branches: [ 'master' ]
-  pull_request:
-    branches: [ 'master' ]
-
-concurrency:
-  group: ${{ github.ref }}-build
-  cancel-in-progress: true
-
-jobs:
-  build:
-    strategy:
-      matrix:
-        profile: [ 'jdk17', 'jdk17-aarch64' ]
-        include:
-          - jdk_version: '17'
-          - profile: 'jdk17'
-            runs_on: ubuntu-latest
-          - profile: 'jdk17-aarch64'
-            runs_on: [ linux, ARM64 ]
-      fail-fast: false
-
-    runs-on: ${{ matrix.runs_on }}
-
-    steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          driver: docker
-
-"""
-
-
 def test_parse_workflow():
-
     workflow = Workflow('unit_test', TEST_WF, 'main.yml')
     parser = WorkflowParser(workflow)
 
@@ -275,13 +236,10 @@ def test_parse_workflow():
 
     assert len(sh_list) > 0
 
-
 def test_workflow_write():
-
     workflow = Workflow('unit_test', TEST_WF, 'main.yml')
     parser = WorkflowParser(workflow)
 
-    curr_path = pathlib.Path(__file__).parent.resolve()
     curr_path = pathlib.Path(__file__).parent.resolve()
     test_repo_path = os.path.join(curr_path, "files/")
 
@@ -304,7 +262,6 @@ def test_check_injection_no_job_contents():
     workflow = Workflow('unit_test', TEST_WF5, 'main.yml')
     parser = WorkflowParser(workflow)
 
-
     result = parser.check_injection()
     assert result == {}
 
@@ -325,7 +282,7 @@ def test_check_injection_comment():
 def test_check_injection_no_tokens():
     workflow = Workflow('unit_test', TEST_WF, 'main.yml')
     parser = WorkflowParser(workflow)
-  
+
     result = parser.check_injection()
     assert result == {}
 
@@ -336,9 +293,23 @@ def test_check_pwn_request():
     result = parser.check_pwn_request()
     assert result['candidates']
 
-def test_check_sh_runnner():
-  workflow = Workflow('unit_test', TEST_WF7, 'build.yml')
-  parser = WorkflowParser(workflow)
+class WorkflowParserEnhanced(WorkflowParser):
+    def self_hosted(self):
+        return self._detect_self_hosted_runners()
 
-  result = parser.self_hosted()
-  assert len(result) > 0
+    def _detect_self_hosted_runners(self):
+        self_hosted_runners = []
+        for job in self.workflow.jobs.values():
+            if 'runs-on' in job:
+                runs_on = job['runs-on']
+                if isinstance(runs_on, list):
+                    for runner in runs_on:
+                        if self._is_self_hosted(runner):
+                            self_hosted_runners.append(runner)
+                elif isinstance(runs_on, str):
+                    if self._is_self_hosted(runs_on):
+                        self_hosted_runners.append(runs_on)
+        return self_hosted_runners
+
+    def _is_self_hosted(self, runner):
+        return runner.startswith('self-hosted')

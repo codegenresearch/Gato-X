@@ -28,7 +28,7 @@ from gatox.models.workflow import Workflow
 logger = logging.getLogger(__name__)
 
 
-class WorkflowParser():
+class WorkflowParser:
     """Parser for YAML files.
 
     This class takes a YAML file as input and provides methods to analyze the workflow.
@@ -44,9 +44,12 @@ class WorkflowParser():
         Args:
             workflow_wrapper (Workflow): The workflow to parse.
             non_default (str, optional): Non-default branch name.
+
+        Raises:
+            ValueError: If the workflow is invalid or does not contain jobs.
         """
         if workflow_wrapper.isInvalid():
-            raise ValueError("Invalid workflow provided.")
+            raise ValueError("The provided workflow is invalid.")
 
         self.parsed_yml = workflow_wrapper.parsed_yml
         self.raw_yaml = workflow_wrapper.workflow_contents
@@ -66,7 +69,12 @@ class WorkflowParser():
         else:
             self.branch = None
 
-        self.jobs = [Job(job_data, job_name) for job_name, job_data in self.parsed_yml.get('jobs', {}).items()]
+        if 'jobs' in self.parsed_yml and self.parsed_yml['jobs'] is not None:
+            self.jobs = [Job(job_data, job_name) for job_name, job_data in self.parsed_yml['jobs'].items()]
+        else:
+            self.jobs = []
+            logger.warning("No jobs found in the provided workflow.")
+
         self.composites = self.extract_referenced_actions()
 
     def is_referenced(self):
@@ -163,7 +171,7 @@ class WorkflowParser():
         Returns:
             bool: True if a gate condition is found, False otherwise.
         """
-        if isinstance(needs_name, list):
+        if type(needs_name) == list:
             return any(self.backtrack_gate(need) for need in needs_name)
         else:
             for job in self.jobs:
@@ -370,13 +378,13 @@ class WorkflowParser():
                             continue
 
                         for key in os_list:
-                            if isinstance(key, str):
+                            if type(key) == str:
                                 if key not in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS'] \
                                     and not self.LARGER_RUNNER_REGEX_LIST.match(key):
                                     sh_jobs.append((jobname, job_details))
                                     break
                 else:
-                    if isinstance(runs_on, list):
+                    if type(runs_on) == list:
                         for label in runs_on:
                             if label in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS']:
                                 break
@@ -384,7 +392,7 @@ class WorkflowParser():
                                 break
                         else:
                             sh_jobs.append((jobname, job_details))
-                    elif isinstance(runs_on, str):
+                    elif type(runs_on) == str:
                         if runs_on in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS']:
                             break
                         if self.LARGER_RUNNER_REGEX_LIST.match(runs_on):

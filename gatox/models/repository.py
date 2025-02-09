@@ -9,13 +9,13 @@ class Repository():
     JSON response from GitHub.
     """
 
-    def __init__(self, repo_data: dict):
+    def __init__(self, repo_json: dict):
         """Initialize wrapper class.
 
         Args:
-            repo_data (dict): Dictionary from parsing JSON object returned from GitHub
+            repo_json (dict): Dictionary from parsing JSON object returned from GitHub
         """
-        self.repo_data = repo_data
+        self.repo_data = repo_json
         # Temporary hack until full transition to GQL
         if 'environments' not in self.repo_data:
             self.repo_data['environments'] = []
@@ -53,7 +53,7 @@ class Repository():
 
     def is_private(self):
         """Check if the repository is private."""
-        return self.repo_data['private']
+        return not self.repo_data['public']
 
     def is_archived(self):
         """Check if the repository is archived."""
@@ -65,7 +65,7 @@ class Repository():
 
     def is_public(self):
         """Check if the repository is public."""
-        return self.repo_data['visibility'] == 'public'
+        return self.repo_data['public']
 
     def is_fork(self):
         """Check if the repository is a fork."""
@@ -178,7 +178,7 @@ class Repository():
 
     def toJSON(self):
         """Converts the repository to a Gato JSON representation."""
-        return {
+        representation = {
             "name": self.name,
             "enum_time": self.enum_time.ctime(),
             "permissions": self.permission_data,
@@ -194,3 +194,4 @@ class Repository():
             "public_repos": [repo.toJSON() for repo in self.public_repos],
             "private_repos": [repo.toJSON() for repo in self.private_repos]
         }
+        return representation

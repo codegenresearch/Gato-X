@@ -6,10 +6,10 @@ class DataIngestor:
 
     @staticmethod
     def construct_workflow_cache(yml_results):
-        """Creates a cache of workflow yml files retrieved from GraphQL. Since
+        """Creates a cache of workflow yamls retrieved from GraphQL. Since
         GraphQL and REST do not have parity, we still need to use REST for most
-        enumeration calls. This method saves off all yml files, so during org
-        level enumeration if we perform yml enumeration the cached file is used
+        enumeration calls. This method saves off all yamls, so during org
+        level enumeration if we perform yaml enumeration the cached file is used
         instead of making GitHub REST requests.
 
         Args:
@@ -29,7 +29,7 @@ class DataIngestor:
 
             owner = result['nameWithOwner']
             cache.set_empty(owner)
-            # Empty means no yml files, so just skip.
+            # Empty means no yamls, so just skip.
             if result['object']:
                 for yml_node in result['object']['entries']:
                     yml_name = yml_node['name']

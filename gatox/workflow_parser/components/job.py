@@ -32,10 +32,10 @@ class Job():
 
     EVALUATOR = ExpressionEvaluator()
 
-    def __init__(self, job_data: dict, job_name: str):
+    def __init__(self, job_data, job_name):
         """Constructor for job wrapper.
         """
-        if not isinstance(job_data, dict):
+        if type(job_data) is not dict:
             raise ValueError("job_data must be a dictionary")
 
         self.job_name = job_name
@@ -57,7 +57,7 @@ class Job():
 
         if 'environment' in self.job_data:
             env_data = self.job_data['environment']
-            if isinstance(env_data, list):
+            if type(env_data) is list:
                 self.deployments.extend(env_data)
             else:
                 self.deployments.append(env_data)
@@ -77,11 +77,11 @@ class Job():
                     self.if_condition = f"EVALUATED: {self.if_condition}"
                 else:
                     self.if_condition = f"RESTRICTED: {self.if_condition}"
-            except ValueError:
+            except ValueError as ve:
                 self.if_condition = self.if_condition
-            except NotImplementedError:
+            except NotImplementedError as ni:
                 self.if_condition = self.if_condition
-            except (SyntaxError, IndexError):
+            except (SyntaxError, IndexError) as e:
                 self.if_condition = self.if_condition
             finally:
                 self.evaluated = True
@@ -114,7 +114,7 @@ class Job():
         Processes the runner for the job.
         """
         runner = self.job_data.get('runs-on', '')
-        if isinstance(runner, list):
+        if type(runner) is list:
             for r in runner:
                 self.__check_runner(r)
         else:
@@ -136,7 +136,7 @@ class Job():
         if 'strategy' in self.job_data and 'matrix' in self.job_data['strategy']:
             matrix = self.job_data['strategy']['matrix']
             for key, values in matrix.items():
-                if isinstance(values, list):
+                if type(values) is list:
                     for value in values:
                         self.__process_matrix_value(key, value)
 
@@ -144,5 +144,6 @@ class Job():
         """
         Processes individual matrix values.
         """
-        if self.MATRIX_KEY_EXTRACTION_REGEX.search(value):
-            self.has_matrix = True
+        if type(value) is str:
+            if self.MATRIX_KEY_EXTRACTION_REGEX.search(value):
+                self.has_matrix = True

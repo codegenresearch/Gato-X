@@ -44,16 +44,19 @@ class Organization():
             self.org_admin_user = False
             self.org_member = False
 
-    def set_secrets(self, secrets: list[Secret]):
-        """Set repo-level secrets.
+    def set_repository(self, repo: Repository):
+        """Add a single repository to the organization.
 
         Args:
-            secrets (list): List of secrets at the organization level.
+            repo (Repository): Repository wrapper object to add.
         """
-        self.secrets = secrets
+        if repo.is_private():
+            self.private_repos.append(repo)
+        else:
+            self.public_repos.append(repo)
 
     def set_public_repos(self, repos: list[Repository]):
-        """List of public repos for the org.
+        """Set the list of public repos for the org.
 
         Args:
             repos (List[Repository]): List of Repository wrapper objects.
@@ -61,23 +64,20 @@ class Organization():
         self.public_repos = repos
 
     def set_private_repos(self, repos: list[Repository]):
-        """List of private repos for the org.
+        """Set the list of private repos for the org.
 
         Args:
             repos (List[Repository]): List of Repository wrapper objects.
         """
         self.private_repos = repos
 
-    def set_repository(self, repo: Repository):
-        """Add a single repository to the organization.
+    def set_secrets(self, secrets: list[Secret]):
+        """Set repo-level secrets.
 
         Args:
-            repo (Repository): Repository wrapper object.
+            secrets (list): List of secrets at the organization level.
         """
-        if repo.is_public():
-            self.public_repos.append(repo)
-        elif repo.is_private():
-            self.private_repos.append(repo)
+        self.secrets = secrets
 
     def set_runners(self, runners: list[Runner]):
         """Set a list of runners that the organization can access.

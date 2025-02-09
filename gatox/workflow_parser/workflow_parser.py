@@ -28,8 +28,8 @@ from gatox.models.workflow import Workflow
 logger = logging.getLogger(__name__)
 
 
-class WorkflowParser:
-    """Parser for YML files.
+class WorkflowParser():
+    """Parser for YAML files.
 
     This class is structured to take a YAML file as input and expose methods that aim to answer questions about the YAML file.
     This will allow for growing what kind of analytics this tool can perform as the project grows in capability.
@@ -50,7 +50,6 @@ class WorkflowParser:
             raise ValueError("Received invalid workflow!")
 
         self.parsed_yml = workflow_wrapper.parsed_yml
-        self.jobs = [Job(job_data, job_name) for job_name, job_data in self.parsed_yml.get('jobs', {}).items()]
         self.raw_yaml = workflow_wrapper.workflow_contents
         self.repo_name = workflow_wrapper.repo_name
         self.wf_name = workflow_wrapper.workflow_name
@@ -67,6 +66,11 @@ class WorkflowParser:
             self.branch = non_default
         else:
             self.branch = None
+
+        if 'jobs' in self.parsed_yml and self.parsed_yml['jobs'] is not None:
+            self.jobs = [Job(job_data, job_name) for job_name, job_data in self.parsed_yml['jobs'].items()]
+        else:
+            self.jobs = []
 
         self.composites = self.extract_referenced_actions()
 
@@ -101,7 +105,7 @@ class WorkflowParser:
         Path(os.path.join(dirpath, self.repo_name)).mkdir(parents=True, exist_ok=True)
         with open(os.path.join(dirpath, f'{self.repo_name}/{self.wf_name}'), 'w') as wf_out:
             wf_out.write(self.raw_yaml)
-        return True
+            return True
 
     def extract_referenced_actions(self):
         """Extracts composite actions from the workflow file.

@@ -109,3 +109,4 @@ class OrganizationEnum:
 5. **Variable Naming**: Used `repos` for the variable name in the context of the method.
 6. **Code Structure**: Reviewed the structure of the methods to ensure the flow and logic are streamlined.
 7. **Redundant Code**: Removed the unnecessary reassignment of `org_private_repos` to an empty list.
+8. **Syntax Error Fix**: Removed the unterminated string literal that was causing the syntax error.

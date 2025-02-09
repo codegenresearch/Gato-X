@@ -15,10 +15,10 @@ limitations under the License.
 """
 
 import re
+from typing import List, Dict, Any
 from gatox.workflow_parser.components.step import Step
 from gatox.workflow_parser.expression_parser import ExpressionParser
 from gatox.workflow_parser.expression_evaluator import ExpressionEvaluator
-from gatox.configuration.configuration_manager import ConfigurationManager
 
 class Job():
     """Wrapper class for a Github Actions workflow job.
@@ -32,32 +32,32 @@ class Job():
 
     EVALUATOR = ExpressionEvaluator()
 
-    def __init__(self, job_data, job_name):
+    def __init__(self, job_data: Dict[str, Any], job_name: str):
         """Constructor for job wrapper.
         """
-        if type(job_data) is not dict:
+        if not isinstance(job_data, dict):
             raise ValueError("job_data must be a dictionary")
 
-        self.job_name = job_name
-        self.job_data = job_data
-        self.needs = job_data.get('needs', [])
-        self.steps = [Step(step) for step in job_data.get('steps', [])]
-        self.env = job_data.get('env', {})
-        self.permissions = job_data.get('permissions', [])
-        self.deployments = []
-        self.if_condition = job_data.get('if')
-        self.uses = job_data.get('uses')
-        self.caller = self.uses and self.uses.startswith('./')
-        self.external_caller = self.uses and not self.caller
-        self.has_gate = any(step.is_gate for step in self.steps)
-        self.evaluated = False
-        self.has_self_hosted = False
-        self.has_larger_runner = False
-        self.has_matrix = False
+        self.job_name: str = job_name
+        self.job_data: Dict[str, Any] = job_data
+        self.needs: List[str] = job_data.get('needs', [])
+        self.steps: List[Step] = [Step(step) for step in job_data.get('steps', [])]
+        self.env: Dict[str, Any] = job_data.get('env', {})
+        self.permissions: Dict[str, Any] = job_data.get('permissions', {})
+        self.deployments: List[str] = []
+        self.if_condition: str = job_data.get('if', None)
+        self.uses: str = job_data.get('uses', None)
+        self.caller: bool = self.uses and self.uses.startswith('./')
+        self.external_caller: bool = self.uses and not self.caller
+        self.has_gate: bool = any(step.is_gate for step in self.steps)
+        self.evaluated: bool = False
+        self.has_self_hosted: bool = False
+        self.has_larger_runner: bool = False
+        self.has_matrix: bool = False
 
         if 'environment' in self.job_data:
             env_data = self.job_data['environment']
-            if type(env_data) is list:
+            if isinstance(env_data, list):
                 self.deployments.extend(env_data)
             else:
                 self.deployments.append(env_data)
@@ -65,7 +65,7 @@ class Job():
         self.__process_runner()
         self.__process_matrix()
 
-    def evaluateIf(self):
+    def evaluateIf(self) -> str:
         """Evaluate the If expression by parsing it into an AST
         and then evaluating it in the context of an external user
         triggering it.
@@ -88,39 +88,39 @@ class Job():
 
         return self.if_condition
 
-    def gated(self):
+    def gated(self) -> bool:
         """Check if the workflow is gated.
         """
         return self.has_gate or (self.evaluateIf() and self.evaluateIf().startswith("RESTRICTED"))
 
-    def getJobDependencies(self):
+    def getJobDependencies(self) -> List[str]:
         """Returns Job objects for jobs that must complete 
         successfully before this one.
         """
         return self.needs
 
-    def isCaller(self):
+    def isCaller(self) -> bool:
         """Returns true if the job is a caller (meaning it 
         references a reusable workflow that runs on workflow_call)
         """
         return self.caller
 
-    def isSelfHosted(self):
+    def isSelfHosted(self) -> bool:
         """Check if the job uses a self-hosted runner."""
         return self.has_self_hosted
 
-    def __process_runner(self):
+    def __process_runner(self) -> None:
         """
         Processes the runner for the job.
         """
         runner = self.job_data.get('runs-on', '')
-        if type(runner) is list:
+        if isinstance(runner, list):
             for r in runner:
                 self.__check_runner(r)
         else:
             self.__check_runner(runner)
 
-    def __check_runner(self, runner):
+    def __check_runner(self, runner: str) -> None:
         """
         Checks if the runner is self-hosted or a larger runner.
         """
@@ -129,21 +129,21 @@ class Job():
         elif self.LARGER_RUNNER_REGEX_LIST.match(runner):
             self.has_larger_runner = True
 
-    def __process_matrix(self):
+    def __process_matrix(self) -> None:
         """
         Processes matrix jobs.
         """
         if 'strategy' in self.job_data and 'matrix' in self.job_data['strategy']:
             matrix = self.job_data['strategy']['matrix']
             for key, values in matrix.items():
-                if type(values) is list:
+                if isinstance(values, list):
                     for value in values:
                         self.__process_matrix_value(key, value)
 
-    def __process_matrix_value(self, key, value):
+    def __process_matrix_value(self, key: str, value: Any) -> None:
         """
         Processes individual matrix values.
         """
-        if type(value) is str:
+        if isinstance(value, str):
             if self.MATRIX_KEY_EXTRACTION_REGEX.search(value):
                 self.has_matrix = True

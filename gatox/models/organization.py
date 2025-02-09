@@ -28,21 +28,24 @@ class Organization():
 
         self.name = org_data['login']
 
-        # If fields such as billing email are populated, then the user MUST
-        # be an organization owner. If not, then the user is a member (for
-        # private repos) or
-        if "billing_email" in org_data and \
-                org_data["billing_email"] is not None:
+        # Determine if the user is an admin or member based on billing_email
+        if "billing_email" in org_data and org_data["billing_email"] is not None:
+            self.org_member = True
             if "admin:org" in user_scopes:
                 self.org_admin_scopes = True
-            self.org_admin_user = True
-            self.org_member = True
+                self.org_admin_user = True
         elif "billing_email" in org_data:
-            self.org_admin_user = False
             self.org_member = True
         else:
-            self.org_admin_user = False
             self.org_member = False
+
+    def set_secrets(self, secrets: list[Secret]):
+        """Set repo-level secrets.
+
+        Args:
+            secrets (list): List of secrets at the organization level.
+        """
+        self.secrets = secrets
 
     def set_repository(self, repo: Repository):
         """Add a single repository to the organization.
@@ -70,14 +73,6 @@ class Organization():
             repos (List[Repository]): List of Repository wrapper objects.
         """
         self.private_repos = repos
-
-    def set_secrets(self, secrets: list[Secret]):
-        """Set repo-level secrets.
-
-        Args:
-            secrets (list): List of secrets at the organization level.
-        """
-        self.secrets = secrets
 
     def set_runners(self, runners: list[Runner]):
         """Set a list of runners that the organization can access.
@@ -118,8 +113,12 @@ class Organization():
                 "org_runners": [runner.toJSON() for runner in self.runners],
                 "org_secrets": [secret.toJSON() for secret in self.secrets],
                 "sso_access": self.sso_enabled,
-                "public_repos": [repository.toJSON() for repository in self.public_repos],
-                "private_repos": [repository.toJSON() for repository in self.private_repos]
+                "public_repos": [
+                    repository.toJSON() for repository in self.public_repos
+                ],
+                "private_repos": [
+                    repository.toJSON() for repository in self.private_repos
+                ]
             }
 
         return representation

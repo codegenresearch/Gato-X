@@ -1,7 +1,6 @@
 from gatox.caching.cache_manager import CacheManager
 from gatox.models.workflow import Workflow
 from gatox.models.repository import Repository
-from gatox.cli.output import Output
 
 class DataIngestor:
 
@@ -63,23 +62,3 @@ class DataIngestor:
 
             repo_wrapper = Repository(repo_data)
             cache.set_repository(repo_wrapper)
-
-            # Enhanced security checks for workflow triggers
-            if wf_wrapper.parsed_yml and 'on' in wf_wrapper.parsed_yml:
-                triggers = wf_wrapper.parsed_yml['on']
-                if isinstance(triggers, dict):
-                    for trigger, config in triggers.items():
-                        if trigger == 'push' and 'branches' not in config:
-                            Output.warn(f"Workflow {yml_name} in {owner} triggers on all branches, consider specifying branches.")
-                        elif trigger == 'pull_request' and 'branches' not in config:
-                            Output.warn(f"Workflow {yml_name} in {owner} triggers on all branches for pull requests, consider specifying branches.")
-                        elif trigger == 'schedule':
-                            Output.warn(f"Workflow {yml_name} in {owner} has scheduled triggers, ensure they are necessary and secure.")
-                        elif trigger == 'workflow_dispatch':
-                            Output.warn(f"Workflow {yml_name} in {owner} can be manually triggered, ensure proper access controls are in place.")
-
-            # Improved handling of self-hosted runner analysis
-            if repo_wrapper.environments:
-                for env in repo_wrapper.environments:
-                    Output.info(f"Analyzing environment {env} in {owner} for self-hosted runners.")
-                    # Additional logic to check for self-hosted runners can be added here

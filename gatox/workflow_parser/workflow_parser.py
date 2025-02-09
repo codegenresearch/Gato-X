@@ -31,8 +31,8 @@ logger = logging.getLogger(__name__)
 class WorkflowParser:
     """Parser for YAML files.
 
-    This class takes a YAML file as input and provides methods to analyze the workflow.
-    It performs static analysis and does not interact with external APIs.
+    This class is designed to parse a YAML file representing a GitHub Actions workflow.
+    It provides methods to analyze the workflow for various security and operational concerns.
     """
 
     LARGER_RUNNER_REGEX_LIST = re.compile(r'(windows|ubuntu)-(22.04|20.04|2019-2022)-(4|8|16|32|64)core-(16|32|64|128|256)gb')
@@ -49,7 +49,7 @@ class WorkflowParser:
             ValueError: If the workflow is invalid or does not contain jobs.
         """
         if workflow_wrapper.isInvalid():
-            raise ValueError("The provided workflow is invalid.")
+            raise ValueError("The provided workflow is invalid or does not contain valid data.")
 
         self.parsed_yml = workflow_wrapper.parsed_yml
         self.raw_yaml = workflow_wrapper.workflow_contents
@@ -69,12 +69,7 @@ class WorkflowParser:
         else:
             self.branch = None
 
-        if 'jobs' in self.parsed_yml and self.parsed_yml['jobs'] is not None:
-            self.jobs = [Job(job_data, job_name) for job_name, job_data in self.parsed_yml['jobs'].items()]
-        else:
-            self.jobs = []
-            logger.warning("No jobs found in the provided workflow.")
-
+        self.jobs = [Job(job_data, job_name) for job_name, job_data in self.parsed_yml.get('jobs', {}).items()]
         self.composites = self.extract_referenced_actions()
 
     def is_referenced(self):
@@ -106,9 +101,14 @@ class WorkflowParser:
             bool: True if the file was written successfully, False otherwise.
         """
         Path(os.path.join(dirpath, self.repo_name)).mkdir(parents=True, exist_ok=True)
-        with open(os.path.join(dirpath, f'{self.repo_name}/{self.wf_name}'), 'w') as wf_out:
-            wf_out.write(self.raw_yaml)
+        file_path = os.path.join(dirpath, f'{self.repo_name}/{self.wf_name}')
+        try:
+            with open(file_path, 'w') as wf_out:
+                wf_out.write(self.raw_yaml)
             return True
+        except IOError as e:
+            logger.error(f"Failed to write file to {file_path}: {e}")
+            return False
 
     def extract_referenced_actions(self):
         """Extract composite actions from the workflow.
@@ -117,9 +117,6 @@ class WorkflowParser:
             dict: Dictionary of referenced actions.
         """
         referenced_actions = {}
-        vulnerable_triggers = self.get_vulnerable_triggers()
-        if not vulnerable_triggers:
-            return referenced_actions
 
         for job in self.jobs:
             for step in job.steps:
@@ -171,7 +168,7 @@ class WorkflowParser:
         Returns:
             bool: True if a gate condition is found, False otherwise.
         """
-        if type(needs_name) == list:
+        if isinstance(needs_name, list):
             return any(self.backtrack_gate(need) for need in needs_name)
         else:
             for job in self.jobs:
@@ -211,6 +208,7 @@ class WorkflowParser:
             for step in job.steps:
                 if step.is_gate:
                     job_content['gated'] = True
+                    break
                 elif step.is_checkout:
                     if job.needs:
                         job_content['gated'] = self.backtrack_gate(job.needs)
@@ -247,7 +245,7 @@ class WorkflowParser:
         vulnerable_triggers = self.get_vulnerable_triggers()
         if not vulnerable_triggers and not bypass:
             return {}
-        
+
         candidates = {}
 
         checkout_info = self.analyze_checkouts()
@@ -378,13 +376,13 @@ class WorkflowParser:
                             continue
 
                         for key in os_list:
-                            if type(key) == str:
+                            if isinstance(key, str):
                                 if key not in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS'] \
                                     and not self.LARGER_RUNNER_REGEX_LIST.match(key):
                                     sh_jobs.append((jobname, job_details))
                                     break
                 else:
-                    if type(runs_on) == list:
+                    if isinstance(runs_on, list):
                         for label in runs_on:
                             if label in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS']:
                                 break
@@ -392,7 +390,7 @@ class WorkflowParser:
                                 break
                         else:
                             sh_jobs.append((jobname, job_details))
-                    elif type(runs_on) == str:
+                    elif isinstance(runs_on, str):
                         if runs_on in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS']:
                             break
                         if self.LARGER_RUNNER_REGEX_LIST.match(runs_on):

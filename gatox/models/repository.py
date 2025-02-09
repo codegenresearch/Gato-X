@@ -54,7 +54,7 @@ class Repository():
 
     def is_private(self):
         """Check if the repository is private."""
-        return self.repo_data['private']
+        return self.repo_data['visibility'] != 'public'
 
     def is_archived(self):
         """Check if the repository is archived."""
@@ -105,7 +105,7 @@ class Repository():
         self.pwn_req_risk = [element for element in self.pwn_req_risk if element['workflow_name'] != workflow_name]
 
     def has_pwn_request(self):
-        """Check if there are any pwn request risks."""
+        """Return True if there are any pwn request risks."""
         return len(self.pwn_req_risk) > 0
 
     def set_injection(self, injection_package: dict):
@@ -113,7 +113,7 @@ class Repository():
         self.injection_risk.append(injection_package)
 
     def has_injection(self):
-        """Check if there are any injection risks."""
+        """Return True if there are any injection risks."""
         return len(self.injection_risk) > 0
 
     def set_secrets(self, secrets: list[Secret]):

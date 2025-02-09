@@ -8,8 +8,8 @@ from gatox.models.runner import Runner
 from gatox.github.api import Api
 
 
-class OrganizationEnum():
-    """Helper class to wrap organization specific enumeration functionality.
+class OrganizationEnum:
+    """Helper class to wrap organization-specific enumeration functionality.
     """
 
     def __init__(self, api: Api):
@@ -21,23 +21,18 @@ class OrganizationEnum():
         self.api = api
 
     def __assemble_repo_list(
-            self, organization: str, visibilities: list) -> List[Repository]:
-        """Get a list of repositories that match the visibility types.
+            self, organization: str, visibility: str) -> List[Repository]:
+        """Get a list of repositories with the specified visibility.
 
         Args:
             organization (str): Name of the organization.
-            visibilities (list): List of visibilities (public, private, etc)
+            visibility (str): Visibility type (public, private, internal).
 
         Returns:
-            List[Repository]: List of repositories matching the visibilities.
+            List[Repository]: List of repositories with the specified visibility.
         """
-        repos = []
-        for visibility in visibilities:
-            raw_repos = self.api.check_org_repos(organization, visibility)
-            if raw_repos:
-                repos.extend([Repository(repo) for repo in raw_repos])
-
-        return repos
+        raw_repos = self.api.check_org_repos(organization, visibility)
+        return [Repository(repo, visibility=visibility) for repo in raw_repos]
 
     def construct_repo_enum_list(
             self, organization: Organization) -> List[Repository]:
@@ -51,7 +46,10 @@ class OrganizationEnum():
             List[Repository]: List of repositories to enumerate.
         """
         visibilities = ['private', 'internal', 'public']
-        all_repos = self.__assemble_repo_list(organization.name, visibilities)
+        all_repos = []
+
+        for visibility in visibilities:
+            all_repos.extend(self.__assemble_repo_list(organization.name, visibility))
 
         org_private_repos = [repo for repo in all_repos if repo.visibility in ['private', 'internal']]
         org_public_repos = [repo for repo in all_repos if repo.visibility == 'public']
@@ -100,3 +98,11 @@ class OrganizationEnum():
                 ]
 
                 organization.set_secrets(org_secrets)
+
+
+### Key Changes:
+1. **Repository Initialization**: Modified the `__assemble_repo_list` method to pass the `visibility` attribute to the `Repository` constructor.
+2. **Docstring Consistency**: Ensured consistent wording and formatting in docstrings.
+3. **Variable Naming**: Used consistent naming conventions for variables.
+4. **Comment Clarity**: Improved comments for clarity.
+5. **Code Structure**: Refactored the `construct_repo_enum_list` method for better clarity and maintainability.

@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 import re
-from typing import List, Dict, Any
+from gatox.configuration.configuration_manager import ConfigurationManager
 from gatox.workflow_parser.components.step import Step
 from gatox.workflow_parser.expression_parser import ExpressionParser
 from gatox.workflow_parser.expression_evaluator import ExpressionEvaluator
@@ -32,28 +32,30 @@ class Job():
 
     EVALUATOR = ExpressionEvaluator()
 
-    def __init__(self, job_data: Dict[str, Any], job_name: str):
+    def __init__(self, job_data: dict, job_name: str):
         """Constructor for job wrapper.
         """
-        if not isinstance(job_data, dict):
-            raise ValueError("job_data must be a dictionary")
+        if isinstance(job_data, list) and len(job_data) == 1:
+            job_data = job_data[0]
+        elif not isinstance(job_data, dict):
+            raise ValueError("job_data must be a dictionary or a single-element list containing a dictionary")
 
-        self.job_name: str = job_name
-        self.job_data: Dict[str, Any] = job_data
-        self.needs: List[str] = job_data.get('needs', [])
-        self.steps: List[Step] = [Step(step) for step in job_data.get('steps', [])]
-        self.env: Dict[str, Any] = job_data.get('env', {})
-        self.permissions: Dict[str, Any] = job_data.get('permissions', {})
-        self.deployments: List[str] = []
-        self.if_condition: str = job_data.get('if', None)
-        self.uses: str = job_data.get('uses', None)
-        self.caller: bool = self.uses and self.uses.startswith('./')
-        self.external_caller: bool = self.uses and not self.caller
-        self.has_gate: bool = any(step.is_gate for step in self.steps)
-        self.evaluated: bool = False
-        self.has_self_hosted: bool = False
-        self.has_larger_runner: bool = False
-        self.has_matrix: bool = False
+        self.job_name = job_name
+        self.job_data = job_data
+        self.needs = job_data.get('needs', [])
+        self.steps = [Step(step) for step in job_data.get('steps', [])]
+        self.env = job_data.get('env', {})
+        self.permissions = job_data.get('permissions', {})
+        self.deployments = []
+        self.if_condition = job_data.get('if', None)
+        self.uses = job_data.get('uses', None)
+        self.caller = self.uses and self.uses.startswith('./')
+        self.external_caller = self.uses and not self.caller
+        self.has_gate = any(step.is_gate for step in self.steps)
+        self.evaluated = False
+        self.has_self_hosted = False
+        self.has_larger_runner = False
+        self.has_matrix = False
 
         if 'environment' in self.job_data:
             env_data = self.job_data['environment']
@@ -93,7 +95,7 @@ class Job():
         """
         return self.has_gate or (self.evaluateIf() and self.evaluateIf().startswith("RESTRICTED"))
 
-    def getJobDependencies(self) -> List[str]:
+    def getJobDependencies(self) -> list:
         """Returns Job objects for jobs that must complete 
         successfully before this one.
         """

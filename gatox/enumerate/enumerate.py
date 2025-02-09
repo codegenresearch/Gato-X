@@ -1,6 +1,5 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from gatox.github.api import Api
 from gatox.github.gql_queries import GqlQueries
@@ -69,21 +68,17 @@ class Enumerator:
         if not self.user_perms and self.api.is_app_token():
             installation_info = self.api.get_installation_repos()
 
-            if installation_info:
-                count = installation_info["total_count"]
-                if count > 0:
-                    Output.info(
-                        f"Gato-X is using valid a GitHub App installation token!"
-                    )
-                    self.user_perms = {
-                        "user": "Github App",
-                        "scopes": [],
-                        "name": "GATO-X App Mode",
-                    }
+            if installation_info and installation_info["total_count"] > 0:
+                Output.info(
+                    f"Gato-X is using valid a GitHub App installation token!"
+                )
+                self.user_perms = {
+                    "user": "Github App",
+                    "scopes": [],
+                    "name": "GATO-X App Mode",
+                }
 
-                    return True
-                else:
-                    return False
+                return True
 
         if not self.user_perms:
             self.user_perms = self.api.check_user()
@@ -95,7 +90,7 @@ class Enumerator:
                 "The authenticated user is: "
                 f"{Output.bright(self.user_perms['user'])}"
             )
-            if len(self.user_perms["scopes"]):
+            if self.user_perms["scopes"]:
                 Output.info(
                     "The GitHub Classic PAT has the following scopes: "
                     f'{Output.yellow(", ".join(self.user_perms["scopes"]))}'
@@ -112,11 +107,7 @@ class Enumerator:
         """
         with ThreadPoolExecutor(max_workers=3) as executor:
             Output.info(f"Querying repositories in {len(queries)} batches!")
-            futures = []
-            for i, wf_query in enumerate(queries):
-                futures.append(
-                    executor.submit(DataIngestor.perform_query, self.api, wf_query, i)
-                )
+            futures = [executor.submit(DataIngestor.perform_query, self.api, wf_query, i) for i, wf_query in enumerate(queries)]
             for future in as_completed(futures):
                 Output.info(
                     f"Processed {DataIngestor.check_status()}/{len(queries)} batches.",
@@ -127,11 +118,11 @@ class Enumerator:
     def validate_only(self):
         """Validates the PAT access and exits."""
         if not self.__setup_user_info():
-            return False
+            return []
 
         if "repo" not in self.user_perms["scopes"]:
             Output.warn("Token does not have sufficient access to list orgs!")
-            return False
+            return []
 
         orgs = self.api.check_organizations()
 
@@ -143,27 +134,21 @@ class Enumerator:
         for org in orgs:
             Output.tabbed(f"{Output.bright(org)}")
 
-        return [
-            Organization({"login": org}, self.user_perms["scopes"], True)
-            for org in orgs
-        ]
+        return [Organization({"login": org}, self.user_perms["scopes"], True) for org in orgs]
 
     def self_enumeration(self):
         """Enumerates all organizations associated with the authenticated user.
 
         Returns:
             bool: False if the PAT is not valid for enumeration.
-            (list, list): Tuple containing list of orgs and list of repos.
         """
 
-        self.__setup_user_info()
-
-        if not self.user_perms:
-            return False
+        if not self.__setup_user_info():
+            return False, []
 
         if "repo" not in self.user_perms["scopes"]:
             Output.error("Self-enumeration requires the repo scope!")
-            return False
+            return False, []
 
         Output.info("Enumerating user owned repositories!")
 
@@ -179,7 +164,7 @@ class Enumerator:
         for org in orgs:
             Output.tabbed(f"{Output.bright(org)}")
 
-        org_wrappers = list(map(self.enumerate_organization, orgs))
+        org_wrappers = [self.enumerate_organization(org) for org in orgs]
 
         return org_wrappers, repo_wrappers
 
@@ -187,7 +172,7 @@ class Enumerator:
         """Enumerate a user's repositories."""
 
         if not self.__setup_user_info():
-            return False
+            return []
 
         repos = self.api.get_user_repos(user)
 
@@ -196,7 +181,7 @@ class Enumerator:
                 f"Unable to query the user: {Output.bright(user)}! Ensure the "
                 "user exists!"
             )
-            return False
+            return []
 
         Output.result(f"Enumerating the {Output.bright(user)} user!")
 
@@ -259,8 +244,7 @@ class Enumerator:
                 Output.tabbed(f"Enumerating: {Output.bright(repo.name)}!")
 
                 cached_repo = CacheManager().get_repository(repo.name)
-                if cached_repo:
-                    repo = cached_repo
+                repo = cached_repo if cached_repo else repo
 
                 self.repo_e.enumerate_repository(
                     repo, large_org_enum=len(enum_list) > 25
@@ -295,8 +279,7 @@ class Enumerator:
 
         if not repo:
             repo_data = self.api.get_repository(repo_name)
-            if repo_data:
-                repo = Repository(repo_data)
+            repo = Repository(repo_data) if repo_data else None
 
         if repo:
             if repo.is_archived():
@@ -323,6 +306,7 @@ class Enumerator:
                 f"Unable to enumerate {Output.bright(repo_name)}! It may not "
                 "exist or the user does not have access."
             )
+            return False
 
     def enumerate_repos(self, repo_names: list):
         """Enumerate a list of repositories, each repo must be in Org/Repo name
@@ -331,13 +315,12 @@ class Enumerator:
         Args:
             repo_names (list): Repository name in {Org/Owner}/Repo format.
         """
-        repo_wrappers = []
         if not self.__setup_user_info():
-            return repo_wrappers
+            return []
 
-        if len(repo_names) == 0:
+        if not repo_names:
             Output.error("The list of repositories was empty!")
-            return repo_wrappers
+            return []
 
         Output.info(
             f"Querying and caching workflow YAML files "
@@ -346,6 +329,7 @@ class Enumerator:
         queries = GqlQueries.get_workflow_ymls_from_list(repo_names)
         self.__query_graphql_workflows(queries)
 
+        repo_wrappers = []
         try:
             for repo in repo_names:
                 repo_obj = self.enumerate_repo_only(repo, len(repo_names) > 100)

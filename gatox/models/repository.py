@@ -5,15 +5,15 @@ from gatox.models.secret import Secret
 
 
 class Repository():
-    """Simple wrapper class to provide accessor methods against the repository
-    JSON response from GitHub.
+    """Enhanced wrapper class to provide accessor methods against the repository
+    JSON response from GitHub, with improved management and permission handling.
     """
 
     def __init__(self, repo_data: dict):
-        """Initialize wrapper class.
+        """Initialize wrapper class with additional permission checks and data handling.
 
         Args:
-            repo_json (dict): Dictionary from parsing JSON object returned from
+            repo_data (dict): Dictionary from parsing JSON object returned from
             GitHub
         """
         self.repo_data = repo_data
@@ -48,7 +48,7 @@ class Repository():
         return self.permission_data.get('pull', False)
 
     def is_private(self):
-        return self.repo_data['visibility'] != 'public'
+        return self.repo_data['private']
     
     def is_archived(self):
         return self.repo_data['archived']
@@ -88,8 +88,7 @@ class Repository():
     def clear_pwn_request(self, workflow_name):
         """Remove pwn request entry since it's a false positive.
         """
-        self.pwn_req_risk = [element for element in self.pwn_req_risk if \
-                             element['workflow_name'] != workflow_name]
+        self.pwn_req_risk = [element for element in self.pwn_req_risk if element['workflow_name'] != workflow_name]
 
     def has_pwn_request(self):
         """Return True if there are any pwn request risks.
@@ -134,8 +133,35 @@ class Repository():
         self.sh_runner_access = True
         self.accessible_runners.append(runner)
 
+    def add_repository(self, repo: 'Repository'):
+        """Add a repository to the current repository's management.
+
+        Args:
+            repo (Repository): Repository wrapper object to be managed.
+        """
+        if repo.is_private():
+            self.private_repos.append(repo)
+        else:
+            self.public_repos.append(repo)
+
+    def set_public_repos(self, repos: list['Repository']):
+        """List of public repos for the org.
+
+        Args:
+            repos (List[Repository]): List of Repository wrapper objects.
+        """
+        self.public_repos = repos
+
+    def set_private_repos(self, repos: list['Repository']):
+        """List of private repos for the org.
+
+        Args:
+            repos (List[Repository]): List of Repository wrapper objects.
+        """
+        self.private_repos = repos
+
     def toJSON(self):
-        """Converts the repository to a Gato JSON representation.
+        """Converts the repository to a Gato JSON representation with enhanced data.
         """
         representation = {
             "name": self.name,
@@ -143,14 +169,15 @@ class Repository():
             "permissions": self.permission_data,
             "can_fork": self.can_fork(),
             "stars": self.repo_data['stargazers_count'],
-            "runner_workflows": [wf for wf in self.sh_workflow_names],
-            "accessible_runners": [runner.toJSON() for runner
-                                   in self.accessible_runners],
+            "runner_workflows": self.sh_workflow_names,
+            "accessible_runners": [runner.toJSON() for runner in self.accessible_runners],
             "repo_runners": [runner.toJSON() for runner in self.runners],
             "repo_secrets": [secret.toJSON() for secret in self.secrets],
             "org_secrets": [secret.toJSON() for secret in self.org_secrets],
             "pwn_request_risk": self.pwn_req_risk,
-            "injection_risk": self.injection_risk
+            "injection_risk": self.injection_risk,
+            "public_repos": [repo.toJSON() for repo in getattr(self, 'public_repos', [])],
+            "private_repos": [repo.toJSON() for repo in getattr(self, 'private_repos', [])]
         }
 
         return representation

@@ -25,7 +25,6 @@ class Organization():
 
         self.public_repos = []
         self.private_repos = []
-        self.forked_repos = []
 
         self.name = org_data['login']
 
@@ -69,13 +68,16 @@ class Organization():
         """
         self.private_repos = repos
 
-    def set_forked_repos(self, repos: list[Repository]):
-        """List of forked repos for the org.
+    def set_repository(self, repo: Repository):
+        """Add a single repository to the organization.
 
         Args:
-            repos (List[Repository]): List of Repository wrapper objects.
+            repo (Repository): Repository wrapper object.
         """
-        self.forked_repos = repos
+        if repo.is_public():
+            self.public_repos.append(repo)
+        elif repo.is_private():
+            self.private_repos.append(repo)
 
     def set_runners(self, runners: list[Runner]):
         """Set a list of runners that the organization can access.
@@ -99,8 +101,6 @@ class Organization():
             return True
         elif repo.is_private() and self.org_member:
             return True
-        elif repo.is_forked() and self.org_member:
-            return True
         return False
 
     def toJSON(self):
@@ -119,8 +119,7 @@ class Organization():
                 "org_secrets": [secret.toJSON() for secret in self.secrets],
                 "sso_access": self.sso_enabled,
                 "public_repos": [repository.toJSON() for repository in self.public_repos],
-                "private_repos": [repository.toJSON() for repository in self.private_repos],
-                "forked_repos": [repository.toJSON() for repository in self.forked_repos]
+                "private_repos": [repository.toJSON() for repository in self.private_repos]
             }
 
         return representation

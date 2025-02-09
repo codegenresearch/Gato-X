@@ -5,20 +5,20 @@ from gatox.models.repository import Repository
 class DataIngestor:
 
     @staticmethod
-    def construct_workflow_cache(yml_results):
-        """Creates a cache of workflow yml files retrieved from GraphQL. Since
+    def construct_workflow_cache(yaml_results):
+        """Creates a cache of workflow yaml files retrieved from GraphQL. Since
         GraphQL and REST do not have parity, we still need to use REST for most
-        enumeration calls. This method saves off all yml files, so during org
-        level enumeration if we perform yml enumeration the cached file is used
+        enumeration calls. This method saves off all yaml files, so during org
+        level enumeration if we perform yaml enumeration the cached file is used
         instead of making GitHub REST requests.
 
         Args:
-            yml_results (list): List of results from individual GraphQL queries
+            yaml_results (list): List of results from individual GraphQL queries
             (100 nodes at a time).
         """
 
         cache = CacheManager()
-        for result in yml_results:
+        for result in yaml_results:
             # If we get any malformed/missing data just skip it and 
             # Gato will fall back to the contents API for these few cases.
             if not result:
@@ -29,15 +29,15 @@ class DataIngestor:
 
             owner = result['nameWithOwner']
             cache.set_empty(owner)
-            # Empty means no ymls, so just skip.
+            # Empty means no yaml files, so just skip.
             if result['object']:
-                for yml_node in result['object']['entries']:
-                    yml_name = yml_node['name']
-                    if yml_name.lower().endswith('yml') or yml_name.lower().endswith('yaml'):
-                        contents = yml_node['object']['text']
-                        wf_wrapper = Workflow(owner, contents, yml_name)
+                for yaml_node in result['object']['entries']:
+                    yaml_name = yaml_node['name']
+                    if yaml_name.lower().endswith('yaml') or yaml_name.lower().endswith('yml'):
+                        contents = yaml_node['object']['text']
+                        wf_wrapper = Workflow(owner, contents, yaml_name)
                         
-                        cache.set_workflow(owner, yml_name, wf_wrapper) 
+                        cache.set_workflow(owner, yaml_name, wf_wrapper) 
 
             repo_data = {
                 'full_name': result['nameWithOwner'],
@@ -48,14 +48,14 @@ class DataIngestor:
                 'stargazers_count': result['stargazers']['totalCount'],
                 'pushed_at': result['pushedAt'],
                 'permissions': {
-                    'pull': result['viewerPermission'] == 'READ' or \
-                            result['viewerPermission'] == 'TRIAGE' or \
-                            result['viewerPermission'] == 'WRITE' or \
-                            result['viewerPermission'] == 'MAINTAIN' or \
-                            result['viewerPermission'] == 'ADMIN',
-                    'push': result['viewerPermission'] == 'WRITE' or \
-                            result['viewerPermission'] == 'MAINTAIN' or \
-                            result['viewerPermission'] == 'ADMIN',
+                    'pull': (result['viewerPermission'] == 'READ' or
+                             result['viewerPermission'] == 'TRIAGE' or
+                             result['viewerPermission'] == 'WRITE' or
+                             result['viewerPermission'] == 'MAINTAIN' or
+                             result['viewerPermission'] == 'ADMIN'),
+                    'push': (result['viewerPermission'] == 'WRITE' or
+                             result['viewerPermission'] == 'MAINTAIN' or
+                             result['viewerPermission'] == 'ADMIN'),
                     'admin': result['viewerPermission'] == 'ADMIN',
                     'maintain': result['viewerPermission'] == 'MAINTAIN'
                 },

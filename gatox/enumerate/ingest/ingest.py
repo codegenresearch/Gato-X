@@ -42,7 +42,7 @@ class DataIngestor:
                 'html_url': result['url'],
                 'visibility': 'private' if result['isPrivate'] else 'public',
                 'default_branch': result['defaultBranchRef']['name'] if result.get('defaultBranchRef') else 'main',
-                'allow_forking': result['isFork'],
+                'fork': result['isFork'],
                 'stargazers_count': result['stargazers']['totalCount'],
                 'pushed_at': result['pushedAt'],
                 'permissions': {
@@ -55,7 +55,7 @@ class DataIngestor:
                 'environments': []
             }
 
-            if result.get('environments'):
+            if 'environments' in result and result['environments']:
                 # Capture environments not named github-pages
                 envs = [env['node']['name'] for env in result['environments']['edges'] if env['node']['name'] != 'github-pages']
                 repo_data['environments'] = envs

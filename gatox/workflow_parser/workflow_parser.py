@@ -48,10 +48,9 @@ class WorkflowParser():
         """Initialize class with workflow file.
 
         Args:
-            workflow_yml (str): String containing yaml file read in from
-            repository.
-            repo_name (str): Name of the repository.
-            workflow_name (str): name of the workflow file
+            workflow_wrapper (Workflow): An instance of the Workflow class containing
+                the parsed YAML, repository name, workflow name, and other metadata.
+            non_default (str, optional): A non-default branch name if applicable.
         """
         if workflow_wrapper.isInvalid():
             raise ValueError("Received invalid workflow!")
@@ -67,9 +66,9 @@ class WorkflowParser():
         self.wf_name = workflow_wrapper.workflow_name
         self.callees = []
         self.external_ref = False
-        self.visibility = workflow_wrapper.visibility
-        self.permissions = workflow_wrapper.permissions
-       
+        self.visibility = workflow_wrapper.visibility if hasattr(workflow_wrapper, 'visibility') else 'public'
+        self.permissions = workflow_wrapper.permissions if hasattr(workflow_wrapper, 'permissions') else {}
+
         if workflow_wrapper.special_path:
             self.external_ref = True
             self.external_path = workflow_wrapper.special_path
@@ -81,8 +80,12 @@ class WorkflowParser():
 
         self.composites = self.extract_referenced_actions()
 
-
     def is_referenced(self):
+        """Check if the workflow is referenced externally.
+
+        Returns:
+            bool: True if the workflow is referenced externally, False otherwise.
+        """
         return self.external_ref
 
     def has_trigger(self, trigger):
@@ -90,8 +93,9 @@ class WorkflowParser():
 
         Args:
             trigger (str): The trigger to check for.
+
         Returns:
-            bool: Whether the workflow has the specified trigger.
+            bool: True if the workflow has the specified trigger, False otherwise.
         """
         return self.get_vulnerable_triggers(trigger)
 
@@ -102,19 +106,24 @@ class WorkflowParser():
             dirpath (str): Directory to save the yaml file to.
 
         Returns:
-            bool: Whether the file was successfully written.
+            bool: True if the file was successfully written, False otherwise.
         """
         Path(os.path.join(dirpath, f'{self.repo_name}')).mkdir(
             parents=True, exist_ok=True)
 
-        with open(os.path.join(
-                dirpath, f'{self.repo_name}/{self.wf_name}'), 'w') as wf_out:
-            wf_out.write(self.raw_yaml)
-            return True
-        
+        try:
+            with open(os.path.join(dirpath, f'{self.repo_name}/{self.wf_name}'), 'w') as wf_out:
+                wf_out.write(self.raw_yaml)
+                return True
+        except Exception as e:
+            logger.error(f"Failed to write workflow file: {e}")
+            return False
+
     def extract_referenced_actions(self):
-        """
-        Extracts composite actions from the workflow file.
+        """Extracts composite actions from the workflow file.
+
+        Returns:
+            dict: A dictionary of referenced actions.
         """
         referenced_actions = {}
         vulnerable_triggers = self.get_vulnerable_triggers()
@@ -137,6 +146,9 @@ class WorkflowParser():
 
     def get_vulnerable_triggers(self, alternate=False):
         """Analyze if the workflow is set to execute on potentially risky triggers.
+
+        Args:
+            alternate (str, optional): An alternate trigger to check for.
 
         Returns:
             list: List of triggers within the workflow that could be vulnerable
@@ -171,8 +183,14 @@ class WorkflowParser():
 
     def backtrack_gate(self, needs_name):
         """Attempts to find if a job needed by a specific job has a gate check.
+
+        Args:
+            needs_name (str or list): The name of the job or a list of job names to check.
+
+        Returns:
+            bool: True if a gate check is found, False otherwise.
         """
-        if type(needs_name) == list:
+        if isinstance(needs_name, list):
             for need in needs_name:
                 if self.backtrack_gate(need):
                     return True
@@ -191,7 +209,7 @@ class WorkflowParser():
         'actions/checkout' action with a 'ref' parameter.
 
         Returns:
-            job_checkouts: List of 'ref' values within the 'actions/checkout' steps.
+            dict: A dictionary of job checkouts.
         """
         job_checkouts = {}
         if 'jobs' not in self.parsed_yml:
@@ -255,6 +273,9 @@ class WorkflowParser():
     def check_pwn_request(self, bypass=False):
         """Check for potential pwn request vulnerabilities.
 
+        Args:
+            bypass (bool, optional): Whether to bypass the check for vulnerable triggers.
+
         Returns:
             dict: A dictionary containing the job names as keys and a 
             list of potentially vulnerable tokens as values.
@@ -294,7 +315,7 @@ class WorkflowParser():
             gate_rules (list): List of rules to check against.
 
         Returns:
-            bool: Whether the job is violating any of the rules.
+            bool: True if the job is not violating any of the rules, False otherwise.
         """
         for rule in gate_rules:
             for job in self.jobs:
@@ -305,6 +326,9 @@ class WorkflowParser():
             
     def check_injection(self, bypass=False):
         """Check for potential script injection vulnerabilities.
+
+        Args:
+            bypass (bool, optional): Whether to bypass the check for vulnerable triggers.
 
         Returns:
             dict: A dictionary containing the job names as keys and a list 
@@ -375,7 +399,6 @@ class WorkflowParser():
         """
         sh_jobs = []
 
-        # Old Code
         if not self.parsed_yml or 'jobs' not in self.parsed_yml or not self.parsed_yml['jobs']:
             return sh_jobs
 
@@ -383,22 +406,18 @@ class WorkflowParser():
             if 'runs-on' in job_details:
                 runs_on = job_details['runs-on']
                 if 'self-hosted' in runs_on:
-                    # Clear cut
                     sh_jobs.append((jobname, job_details))
                 elif 'matrix.' in runs_on:
-                    # We need to check each OS in the matrix strategy.
-                    # Extract the matrix key from the variable
                     matrix_match = self.MATRIX_KEY_EXTRACTION_REGEX.search(runs_on)
 
                     if matrix_match:
                         matrix_key = matrix_match.group(1)
                     else:
                         continue
-                    # Check if strategy exists in the yaml file
+
                     if 'strategy' in job_details and 'matrix' in job_details['strategy']:
                         matrix = job_details['strategy']['matrix']
 
-                        # Use previously acquired key to retrieve list of OSes
                         if matrix_key in matrix:
                             os_list = matrix[matrix_key]
                         elif 'include' in matrix:
@@ -410,16 +429,14 @@ class WorkflowParser():
                         else:
                             continue
 
-                        # We only need ONE to be self hosted, others can be
-                        # GitHub hosted
                         for key in os_list:
-                            if type(key) == str:
+                            if isinstance(key, str):
                                 if key not in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS'] \
                                     and not self.LARGER_RUNNER_REGEX_LIST.match(key):
                                     sh_jobs.append((jobname, job_details))
                                     break
                 else:
-                    if type(runs_on) == list:
+                    if isinstance(runs_on, list):
                         for label in runs_on:
                             if label in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS']:
                                 break
@@ -427,7 +444,7 @@ class WorkflowParser():
                                 break
                         else:
                             sh_jobs.append((jobname, job_details))
-                    elif type(runs_on) == str:
+                    elif isinstance(runs_on, str):
                         if runs_on in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS']:
                             break
                         if self.LARGER_RUNNER_REGEX_LIST.match(runs_on):

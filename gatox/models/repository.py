@@ -16,7 +16,6 @@ class Repository():
             repo_data (dict): Dictionary from parsing JSON object returned from GitHub
         """
         self.repo_data = repo_data
-        # Temporary hack until full transition to GQL
         if 'environments' not in self.repo_data:
             self.repo_data['environments'] = []
 
@@ -26,7 +25,6 @@ class Repository():
         self.org_secrets: list[Secret] = []
         self.sh_workflow_names = []
         self.enum_time = datetime.datetime.now()
-
         self.permission_data = self.repo_data['permissions']
         self.sh_runner_access = False
         self.accessible_runners: list[Runner] = []
@@ -106,7 +104,7 @@ class Repository():
 
     def has_pwn_request(self):
         """Return True if there are any pwn request risks."""
-        return len(self.pwn_req_risk) > 0
+        return bool(self.pwn_req_risk)
 
     def set_injection(self, injection_package: dict):
         """Set an injection risk package."""
@@ -114,7 +112,7 @@ class Repository():
 
     def has_injection(self):
         """Return True if there are any injection risks."""
-        return len(self.injection_risk) > 0
+        return bool(self.injection_risk)
 
     def set_secrets(self, secrets: list[Secret]):
         """Set secrets that are attached to this repository.
@@ -179,7 +177,7 @@ class Repository():
 
     def toJSON(self):
         """Converts the repository to a Gato JSON representation."""
-        representation = {
+        return {
             "name": self.name,
             "enum_time": self.enum_time.ctime(),
             "permissions": self.permission_data,
@@ -195,5 +193,3 @@ class Repository():
             "public_repos": [repo.toJSON() for repo in self.public_repos],
             "private_repos": [repo.toJSON() for repo in self.private_repos]
         }
-
-        return representation

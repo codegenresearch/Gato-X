@@ -20,7 +20,7 @@ class DataIngestor:
 
         cache = CacheManager()
         for result in yml_results:
-            # Skip malformed or missing data
+            # Skip if result is missing or does not contain 'nameWithOwner'
             if not result or 'nameWithOwner' not in result:
                 continue
 

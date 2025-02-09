@@ -1,15 +1,16 @@
 from gatox.caching.cache_manager import CacheManager
 from gatox.models.workflow import Workflow
 from gatox.models.repository import Repository
+from gatox.cli.output import Output
 
 class DataIngestor:
 
     @staticmethod
     def construct_workflow_cache(yml_results):
-        """Creates a cache of workflow yml files retrieved from GraphQL. Since
+        """Creates a cache of workflow YAML files retrieved from GraphQL. Since
         GraphQL and REST do not have parity, we still need to use REST for most
-        enumeration calls. This method saves off all yml files, so during org
-        level enumeration if we perform yml enumeration the cached file is used
+        enumeration calls. This method saves off all YAML files, so during org
+        level enumeration if we perform YAML enumeration the cached file is used
         instead of making GitHub REST requests.
 
         Args:

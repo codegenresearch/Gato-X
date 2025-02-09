@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 import re
+from typing import Any, List, Dict
 from gatox.configuration.configuration_manager import ConfigurationManager
 from gatox.workflow_parser.components.step import Step
 from gatox.workflow_parser.expression_parser import ExpressionParser
@@ -32,7 +33,7 @@ class Job():
 
     EVALUATOR = ExpressionEvaluator()
 
-    def __init__(self, job_data: dict, job_name: str):
+    def __init__(self, job_data: Dict[str, Any], job_name: str):
         """Constructor for job wrapper.
         """
         if isinstance(job_data, list) and len(job_data) == 1:
@@ -59,7 +60,7 @@ class Job():
 
         if 'environment' in self.job_data:
             env_data = self.job_data['environment']
-            if isinstance(env_data, list):
+            if type(env_data) is list:
                 self.deployments.extend(env_data)
             else:
                 self.deployments.append(env_data)
@@ -95,7 +96,7 @@ class Job():
         """
         return self.has_gate or (self.evaluateIf() and self.evaluateIf().startswith("RESTRICTED"))
 
-    def getJobDependencies(self) -> list:
+    def getJobDependencies(self) -> List[str]:
         """Returns Job objects for jobs that must complete 
         successfully before this one.
         """
@@ -116,7 +117,7 @@ class Job():
         Processes the runner for the job.
         """
         runner = self.job_data.get('runs-on', '')
-        if isinstance(runner, list):
+        if type(runner) is list:
             for r in runner:
                 self.__check_runner(r)
         else:
@@ -135,17 +136,17 @@ class Job():
         """
         Processes matrix jobs.
         """
-        if 'strategy' in self.job_data and 'matrix' in self.job_data['strategy']:
-            matrix = self.job_data['strategy']['matrix']
-            for key, values in matrix.items():
-                if isinstance(values, list):
-                    for value in values:
-                        self.__process_matrix_value(key, value)
+        strategy = self.job_data.get('strategy', {})
+        matrix = strategy.get('matrix', {})
+        for key, values in matrix.items():
+            if type(values) is list:
+                for value in values:
+                    self.__process_matrix_value(key, value)
 
     def __process_matrix_value(self, key: str, value: Any) -> None:
         """
         Processes individual matrix values.
         """
-        if isinstance(value, str):
+        if type(value) is str:
             if self.MATRIX_KEY_EXTRACTION_REGEX.search(value):
                 self.has_matrix = True

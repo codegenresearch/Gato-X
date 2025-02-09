@@ -353,7 +353,7 @@ class WorkflowParserEnhanced(WorkflowParser):
 
 
 ### Key Changes:
-1. **Removed Invalid Syntax in Comments**: Ensured that all comments are properly formatted and do not contain any invalid syntax.
+1. **Removed Invalid Syntax in Comments**: Ensured that all comments are properly formatted and do not contain any invalid syntax. Removed the comment that was causing the `SyntaxError`.
 2. **Consistent Test Naming**: Ensured that test function names are consistent and follow a uniform naming convention.
 3. **Use of `ANY` in Mocks**: Included `ANY` in the mock imports and used it where appropriate in the tests.
 4. **Additional Test Cases**: Added a test case for a build workflow (`test_check_build_workflow`) to cover a similar breadth of scenarios.

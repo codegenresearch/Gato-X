@@ -13,7 +13,7 @@ class Organization():
             user_scopes (list): List of OAuth scopes that the PAT has
             limited_data (bool): Whether limited org_data is present (default: False)
         """
-        self.name = org_data['login']
+        self.name = None
         self.org_admin_user = False
         self.org_admin_scopes = False
         self.org_member = False
@@ -23,6 +23,8 @@ class Organization():
         self.limited_data = limited_data
         self.public_repos = []
         self.private_repos = []
+
+        self.name = org_data['login']
 
         # Determine if the user is an admin or member based on billing_email
         if "billing_email" in org_data and org_data["billing_email"] is not None:
@@ -45,7 +47,7 @@ class Organization():
         self.secrets = secrets
 
     def set_repository(self, repo: Repository):
-        """Add a single repository to the organization.
+        """Add a single repository object to the organization.
 
         Args:
             repo (Repository): Repository wrapper object to add.
@@ -56,7 +58,7 @@ class Organization():
             self.public_repos.append(repo)
 
     def set_public_repos(self, repos: list[Repository]):
-        """Set the list of public repos for the org.
+        """Set the list of public repository objects for the org.
 
         Args:
             repos (list[Repository]): List of Repository wrapper objects.
@@ -64,7 +66,7 @@ class Organization():
         self.public_repos = repos
 
     def set_private_repos(self, repos: list[Repository]):
-        """Set the list of private repos for the org.
+        """Set the list of private repository objects for the org.
 
         Args:
             repos (list[Repository]): List of Repository wrapper objects.

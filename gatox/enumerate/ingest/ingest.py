@@ -42,7 +42,7 @@ class DataIngestor:
                 'html_url': result['url'],
                 'visibility': 'private' if result['isPrivate'] else 'public',
                 'default_branch': result['defaultBranchRef']['name'] if result.get('defaultBranchRef') else 'main',
-                'fork': result['isFork'],
+                'allow_forking': result['isFork'],
                 'stargazers_count': result['stargazers']['totalCount'],
                 'pushed_at': result['pushedAt'],
                 'permissions': {
@@ -51,7 +51,7 @@ class DataIngestor:
                     'admin': result['viewerPermission'] == 'ADMIN'
                 },
                 'archived': result['isArchived'],
-                'isFork': result['isFork'],
+                'is_fork': result['isFork'],
                 'environments': []
             }
 

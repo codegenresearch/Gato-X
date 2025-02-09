@@ -28,7 +28,7 @@ class DataIngestor:
             cache.set_empty(owner)
 
             # Skip if no YAML files are present
-            if not result['object']:
+            if not result.get('object'):
                 continue
 
             for yml_node in result['object']['entries']:
@@ -42,7 +42,7 @@ class DataIngestor:
                 'full_name': result['nameWithOwner'],
                 'html_url': result['url'],
                 'visibility': 'private' if result['isPrivate'] else 'public',
-                'default_branch': result['defaultBranchRef']['name'] if result['defaultBranchRef'] else 'main',
+                'default_branch': result['defaultBranchRef']['name'] if result.get('defaultBranchRef') else 'main',
                 'fork': result['isFork'],
                 'stargazers_count': result['stargazers']['totalCount'],
                 'pushed_at': result['pushedAt'],
@@ -56,7 +56,7 @@ class DataIngestor:
                 'environments': []
             }
 
-            if 'environments' in result and result['environments']:
+            if result.get('environments'):
                 # Capture environments not named github-pages
                 envs = [env['node']['name'] for env in result['environments']['edges'] if env['node']['name'] != 'github-pages']
                 repo_data['environments'] = envs

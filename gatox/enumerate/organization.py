@@ -27,8 +27,10 @@ class OrganizationEnum():
         Args:
             organization (str): Name of the organization.
             visibilities (list): List of visibilities (public, private, etc)
-        """
 
+        Returns:
+            List[Repository]: List of repositories matching the visibilities.
+        """
         repos = []
         for visibility in visibilities:
             raw_repos = self.api.check_org_repos(organization, visibility)
@@ -54,11 +56,14 @@ class OrganizationEnum():
         org_private_repos = [repo for repo in all_repos if repo.visibility in ['private', 'internal']]
         org_public_repos = [repo for repo in all_repos if repo.visibility == 'public']
 
+        # We might legitimately have no private repos despite being a member.
         if org_private_repos:
             sso_enabled = self.api.validate_sso(
                 organization.name, org_private_repos[0].name
             )
             organization.sso_enabled = sso_enabled
+        else:
+            org_private_repos = []
 
         organization.set_public_repos(org_public_repos)
         organization.set_private_repos(org_private_repos)
@@ -82,8 +87,7 @@ class OrganizationEnum():
                         machine_name=None,
                         os=runner['os'],
                         status=runner['status'],
-                        labels=runner['labels'],
-                        permissions=runner.get('token_permissions', {})
+                        labels=runner['labels']
                     )
                     for runner in runners['runners']
                 ]

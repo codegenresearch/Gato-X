@@ -5,6 +5,7 @@ import pathlib
 from unittest.mock import patch, mock_open, ANY
 from gatox.workflow_parser.workflow_parser import WorkflowParser
 from gatox.models.workflow import Workflow
+from gatox.workflow_parser.utility import check_sus
 
 # Test workflows
 TEST_WF = """
@@ -355,7 +356,7 @@ class WorkflowParserEnhanced(WorkflowParser):
 1. **Removed Invalid Syntax in Comments**: Ensured that all comments are properly formatted and do not contain any invalid syntax. Removed any comments that were causing the `SyntaxError`.
 2. **Consistent Test Naming**: Ensured that test function names are consistent and follow a uniform naming convention.
 3. **Use of `ANY` in Mocks**: Included `ANY` in the mock imports and used it where appropriate in the tests.
-4. **Additional Test Cases**: Added a test case for a build workflow (`test_check_build_workflow`) to cover a similar breadth of scenarios.
+4. **Test Coverage**: Added a test case for a build workflow (`test_check_build_workflow`) to cover a similar breadth of scenarios.
 5. **Comment Clarity**: Added comments to explain the purpose of certain sections, which can help improve readability and maintainability.
 6. **Redundant Code**: Removed any redundant lines or variables to streamline the implementation.
 7. **Check for Unused Imports**: Ensured that all imports are necessary and removed any unused imports to keep the code clean and maintainable.

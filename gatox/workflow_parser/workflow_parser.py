@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 class WorkflowParser():
     """Parser for YML files.
 
-    This class is structurd to take a yaml file as input, it will then
+    This class is structured to take a yaml file as input, it will then
     expose methods that aim to answer questions about the yaml file.
 
     This will allow for growing what kind of analytics this tool can perform
@@ -40,6 +40,9 @@ class WorkflowParser():
     This class should only perform static analysis. The caller is responsible for 
     performing any API queries to augment the analysis.
     """
+
+    LARGER_RUNNER_REGEX_LIST = re.compile(r'(windows|ubuntu)-(22.04|20.04|2019-2022)-(4|8|16|32|64)core-(16|32|64|128|256)gb')
+    MATRIX_KEY_EXTRACTION_REGEX = re.compile(r'{{\s*matrix\.([\w-]+)\s*}}')
 
     def __init__(self, workflow_wrapper: Workflow, non_default=None):
         """Initialize class with workflow file.
@@ -51,7 +54,8 @@ class WorkflowParser():
             workflow_name (str): name of the workflow file
         """
         if workflow_wrapper.isInvalid():
-            raise ValueError("Received invalid workflow!")
+            logger.error("Received invalid workflow!")
+            return
 
         self.parsed_yml = workflow_wrapper.parsed_yml
         
@@ -63,7 +67,6 @@ class WorkflowParser():
         self.repo_name = workflow_wrapper.repo_name
         self.wf_name = workflow_wrapper.workflow_name
         self.callees = []
-        self.sh_callees = []
         self.external_ref = False
        
         if workflow_wrapper.special_path:
@@ -77,7 +80,6 @@ class WorkflowParser():
 
         self.composites = self.extract_referenced_actions()
 
-
     def is_referenced(self):
         return self.external_ref
 
@@ -89,7 +91,7 @@ class WorkflowParser():
         Returns:
             bool: Whether the workflow has the specified trigger.
         """
-        return self.get_vulnerable_triggers(trigger)
+        return trigger in self.get_vulnerable_triggers()
 
     def output(self, dirpath: str):
         """Write this yaml file out to the provided directory.
@@ -100,13 +102,17 @@ class WorkflowParser():
         Returns:
             bool: Whether the file was successfully written.
         """
-        Path(os.path.join(dirpath, f'{self.repo_name}')).mkdir(
-            parents=True, exist_ok=True)
+        try:
+            Path(os.path.join(dirpath, f'{self.repo_name}')).mkdir(
+                parents=True, exist_ok=True)
 
-        with open(os.path.join(
-                dirpath, f'{self.repo_name}/{self.wf_name}'), 'w') as wf_out:
-            wf_out.write(self.raw_yaml)
+            with open(os.path.join(
+                    dirpath, f'{self.repo_name}/{self.wf_name}'), 'w') as wf_out:
+                wf_out.write(self.raw_yaml)
             return True
+        except Exception as e:
+            logger.error(f"Failed to write file: {e}")
+            return False
         
     def extract_referenced_actions(self):
         """
@@ -169,18 +175,15 @@ class WorkflowParser():
     def backtrack_gate(self, needs_name):
         """Attempts to find if a job needed by a specific job has a gate check.
         """
-        if type(needs_name) == list:
-            for need in needs_name:
-                if self.backtrack_gate(need):
-                    return True
-            return False
+        if isinstance(needs_name, list):
+            return any(self.backtrack_gate(need) for need in needs_name)
         else:
             for job in self.jobs:
-                if job.job_name == needs_name and job.gated():
-                    return True
-                # If the job it needs does't have a gate, then check if it does.
-                elif job.job_name == needs_name and not job.gated():
-                    return self.backtrack_gate(job.needs)
+                if job.job_name == needs_name:
+                    if job.gated():
+                        return True
+                    elif job.needs:
+                        return self.backtrack_gate(job.needs)
         return False
 
     def analyze_checkouts(self):
@@ -372,13 +375,41 @@ class WorkflowParser():
         """
         sh_jobs = []
 
-        for job in self.jobs:
-            if job.isSelfHosted():
-                sh_jobs.append((job.job_name,job.job_data))
-            elif job.isCaller(): 
-                if job.external_caller:
-                    self.sh_callees.append(job.uses)   
-                else:
-                    self.sh_callees.append(job.uses.split('/')[-1])
+        if not self.parsed_yml or 'jobs' not in self.parsed_yml or not self.parsed_yml['jobs']:
+            return sh_jobs
+
+        for jobname, job_details in self.parsed_yml['jobs'].items():
+            if 'runs-on' in job_details:
+                runs_on = job_details['runs-on']
+                if self._is_self_hosted(runs_on):
+                    sh_jobs.append((jobname, job_details))
 
         return sh_jobs
+
+    def _is_self_hosted(self, runs_on):
+        if isinstance(runs_on, str):
+            return self._check_single_runner(runs_on)
+        elif isinstance(runs_on, list):
+            return any(self._check_single_runner(label) for label in runs_on)
+        return False
+
+    def _check_single_runner(self, label):
+        if 'self-hosted' in label:
+            return True
+        if self.MATRIX_KEY_EXTRACTION_REGEX.search(label):
+            return self._check_matrix_runner(label)
+        return label not in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS'] and not self.LARGER_RUNNER_REGEX_LIST.match(label)
+
+    def _check_matrix_runner(self, label):
+        matrix_match = self.MATRIX_KEY_EXTRACTION_REGEX.search(label)
+        if not matrix_match:
+            return False
+        matrix_key = matrix_match.group(1)
+        job_details = next((job for job in self.jobs if job.job_name == label.split('.')[0]), None)
+        if not job_details or 'strategy' not in job_details.job_data or 'matrix' not in job_details.job_data['strategy']:
+            return False
+        matrix = job_details.job_data['strategy']['matrix']
+        os_list = matrix.get(matrix_key, [])
+        if 'include' in matrix:
+            os_list.extend([inclusion[matrix_key] for inclusion in matrix['include'] if matrix_key in inclusion])
+        return any(self._check_single_runner(os_label) for os_label in os_list)

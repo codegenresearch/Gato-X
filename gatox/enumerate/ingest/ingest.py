@@ -6,14 +6,14 @@ class DataIngestor:
 
     @staticmethod
     def construct_workflow_cache(yml_results):
-        """Creates a cache of workflow yaml files retrieved from graphql. Since
-        graphql and rest do not have parity, we still need to use rest for most
-        enumeration calls. This method saves off all yaml files, so during org
-        level enumeration if we perform yaml enumeration the cached file is used
-        instead of making github rest requests.
+        """Creates a cache of workflow YAML files retrieved from GraphQL. Since
+        GraphQL and REST do not have parity, we still need to use REST for most
+        enumeration calls. This method saves off all YAML files, so during org
+        level enumeration if we perform YAML enumeration the cached file is used
+        instead of making GitHub REST requests.
 
         Args:
-            yml_results (list): List of results from individual graphql queries
+            yml_results (list): List of results from individual GraphQL queries
             (100 nodes at a time).
         """
 
@@ -29,7 +29,7 @@ class DataIngestor:
 
             owner = result['nameWithOwner']
             cache.set_empty(owner)
-            # Empty means no yamls, so just skip.
+            # Empty means no YAMLs, so just skip.
             if result['object']:
                 for yml_node in result['object']['entries']:
                     yml_name = yml_node['name']
@@ -47,8 +47,14 @@ class DataIngestor:
                 'stargazers_count': result['stargazers']['totalCount'],
                 'pushed_at': result['pushedAt'],
                 'permissions': {
-                    'pull': result['viewerPermission'] in ['READ', 'TRIAGE', 'WRITE', 'MAINTAIN', 'ADMIN'],
-                    'push': result['viewerPermission'] in ['WRITE', 'MAINTAIN', 'ADMIN'],
+                    'pull': (result['viewerPermission'] == 'READ' or
+                             result['viewerPermission'] == 'TRIAGE' or
+                             result['viewerPermission'] == 'WRITE' or
+                             result['viewerPermission'] == 'MAINTAIN' or
+                             result['viewerPermission'] == 'ADMIN'),
+                    'push': (result['viewerPermission'] == 'WRITE' or
+                             result['viewerPermission'] == 'MAINTAIN' or
+                             result['viewerPermission'] == 'ADMIN'),
                     'admin': result['viewerPermission'] == 'ADMIN',
                     'maintain': result['viewerPermission'] == 'MAINTAIN'
                 },

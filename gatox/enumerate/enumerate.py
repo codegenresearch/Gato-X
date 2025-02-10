@@ -155,7 +155,8 @@ class Enumerator:
         if not details:
             Output.warn(
                 f"Unable to query the org: {Output.bright(org)}! Ensure the "
-                "organization exists!")
+                "organization exists!"
+            )
             return False
 
         organization = Organization(details, self.user_perms['scopes'])
@@ -208,8 +209,6 @@ class Enumerator:
                 
                 self.repo_e.enumerate_repository(repo, large_org_enum=len(enum_list) > 25)
                 self.repo_e.enumerate_repository_secrets(repo)
-
-                organization.set_repository(repo)
 
                 Recommender.print_repo_secrets(
                     self.user_perms['scopes'],
@@ -324,3 +323,89 @@ class Enumerator:
             Output.warn("Keyboard interrupt detected, exiting enumeration!")
 
         return repo_wrappers
+
+    def manage_repositories(self, action: str, repo_names: list):
+        """Manage repositories based on the action provided.
+
+        Args:
+            action (str): Action to perform on repositories (e.g., 'add', 'remove').
+            repo_names (list): List of repository names in {Org/Owner}/Repo format.
+        """
+        if not self.__setup_user_info():
+            return False
+
+        if action == 'add':
+            for repo_name in repo_names:
+                repo_data = self.api.get_repository(repo_name)
+                if repo_data:
+                    repo = Repository(repo_data)
+                    CacheManager().set_repository(repo)
+                    Output.info(f"Repository {Output.bright(repo_name)} added to cache.")
+                else:
+                    Output.warn(f"Repository {Output.bright(repo_name)} not found or access denied.")
+        elif action == 'remove':
+            for repo_name in repo_names:
+                CacheManager().remove_repository(repo_name)
+                Output.info(f"Repository {Output.bright(repo_name)} removed from cache.")
+        else:
+            Output.error(f"Unknown action {Output.bright(action)}. Use 'add' or 'remove'.")
+            return False
+
+    def check_repo_visibility(self, repo_name: str):
+        """Check the visibility of a repository.
+
+        Args:
+            repo_name (str): Repository name in {Org/Owner}/Repo format.
+
+        Returns:
+            str: Visibility of the repository ('public', 'private', 'internal').
+        """
+        if not self.__setup_user_info():
+            return None
+
+        repo = CacheManager().get_repository(repo_name)
+
+        if not repo:
+            repo_data = self.api.get_repository(repo_name)
+            if repo_data:
+                repo = Repository(repo_data)
+            else:
+                Output.warn(f"Repository {Output.bright(repo_name)} not found or access denied.")
+                return None
+
+        if repo.is_private():
+            return 'private'
+        elif repo.is_internal():
+            return 'internal'
+        else:
+            return 'public'
+
+    def check_permissions(self, repo_name: str):
+        """Check permissions for a specific repository.
+
+        Args:
+            repo_name (str): Repository name in {Org/Owner}/Repo format.
+
+        Returns:
+            dict: Dictionary of permissions for the repository.
+        """
+        if not self.__setup_user_info():
+            return None
+
+        repo = CacheManager().get_repository(repo_name)
+
+        if not repo:
+            repo_data = self.api.get_repository(repo_name)
+            if repo_data:
+                repo = Repository(repo_data)
+            else:
+                Output.warn(f"Repository {Output.bright(repo_name)} not found or access denied.")
+                return None
+
+        permissions = self.api.get_repo_permissions(repo_name)
+        if permissions:
+            Output.info(f"Permissions for {Output.bright(repo_name)}: {permissions}")
+        else:
+            Output.warn(f"Failed to retrieve permissions for {Output.bright(repo_name)}.")
+
+        return permissions

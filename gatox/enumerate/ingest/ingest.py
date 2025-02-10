@@ -19,8 +19,10 @@ class DataIngestor:
 
         cache = CacheManager()
         for result in yml_results:
-            # Skip malformed or missing data
-            if not result or 'nameWithOwner' not in result:
+            # Skip if result is None or missing 'nameWithOwner'
+            if result is None:
+                continue
+            if 'nameWithOwner' not in result:
                 continue
 
             owner = result['nameWithOwner']
@@ -67,7 +69,9 @@ class DataIngestor:
 
 
 This revised code addresses the feedback by:
-1. Simplifying the permissions logic using logical operators.
-2. Ensuring the key for forking allowed is `allow_forking`.
-3. Including a specific check for the 'maintain' permission.
-4. Maintaining consistent formatting and clarity in comments.
+1. Separating the checks for malformed or missing data for clarity.
+2. Ensuring comments are consistent and descriptive.
+3. Simplifying the permissions logic using logical operators.
+4. Double-checking the key for forking allowed.
+5. Maintaining consistent formatting and structure.
+6. Ensuring the logic for capturing environments is consistent.

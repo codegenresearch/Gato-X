@@ -5,7 +5,7 @@ from gatox.models.secret import Secret
 
 
 class Repository:
-    """Wrapper class for GitHub repository data with enhanced management and permission handling."""
+    """Wrapper class for GitHub repository data."""
 
     def __init__(self, repo_data: dict):
         """Initialize the repository wrapper.
@@ -173,7 +173,7 @@ class Repository:
 This revised code addresses the feedback by:
 1. Ensuring all string literals are properly terminated.
 2. Simplifying the class documentation to be more concise.
-3. Ensuring the constructor's docstring accurately reflects the parameter name.
+3. Ensuring the constructor's docstring accurately reflects the parameter name and is concise.
 4. Simplifying boolean return statements.
 5. Reviewing and refining method docstrings for clarity and consistency.
 6. Maintaining consistent formatting throughout the code.

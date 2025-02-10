@@ -14,23 +14,21 @@ class Execution:
         self.repositories: list[Repository] = []
         self.timestamp = datetime.datetime.now()
 
-    def add_organizations(self, organizations):
+    def add_organizations(self, organizations: list[Organization]):
         """Add a list of organization wrapper objects.
 
         Args:
             organizations (list[Organization]): List of organization wrappers.
         """
-        if organizations:
-            self.organizations = organizations
+        self.organizations = organizations
 
-    def add_repositories(self, repositories):
+    def add_repositories(self, repositories: list[Repository]):
         """Add a list of repository wrapper objects.
 
         Args:
             repositories (list[Repository]): List of repository wrappers.
         """
-        if repositories:
-            self.repositories = repositories
+        self.repositories = repositories
 
     def set_user_details(self, user_details):
         """Set the user details.

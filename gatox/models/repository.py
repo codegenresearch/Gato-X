@@ -1,5 +1,4 @@
 import datetime
-from typing import List, Dict
 
 from gatox.models.runner import Runner
 from gatox.models.secret import Secret
@@ -25,16 +24,16 @@ class Repository():
 
         self.name = self.repo_data['full_name']
         self.org_name = self.name.split('/')[0]
-        self.secrets: List[Secret] = []
-        self.org_secrets: List[Secret] = []
-        self.sh_workflow_names: List[str] = []
+        self.secrets: list[Secret] = []
+        self.org_secrets: list[Secret] = []
+        self.sh_workflow_names: list[str] = []
         self.enum_time = datetime.datetime.now()
         self.permission_data = self.repo_data['permissions']
         self.sh_runner_access = False
-        self.accessible_runners: List[Runner] = []
-        self.runners: List[Runner] = []
-        self.pwn_req_risk: List[Dict] = []
-        self.injection_risk: List[Dict] = []
+        self.accessible_runners: list[Runner] = []
+        self.runners: list[Runner] = []
+        self.pwn_req_risk: list[dict] = []
+        self.injection_risk: list[dict] = []
 
     def is_admin(self):
         """
@@ -64,7 +63,7 @@ class Repository():
         """
         Check if the repository is private.
         """
-        return self.repo_data['private']
+        return not self.is_public()
 
     def is_archived(self):
         """
@@ -108,21 +107,21 @@ class Repository():
         """
         self.enum_time = datetime.datetime.now()
 
-    def set_accessible_org_secrets(self, secrets: List[Secret]):
+    def set_accessible_org_secrets(self, secrets: list[Secret]):
         """
         Set organization secrets that can be read using a workflow in this repository.
 
         Args:
-            secrets (List[Secret]): List of Secret wrapper objects.
+            secrets (list[Secret]): List of Secret wrapper objects.
         """
         self.org_secrets = secrets
 
-    def set_pwn_request(self, pwn_request_package: Dict):
+    def set_pwn_request(self, pwn_request_package: dict):
         """
         Set a pwn request risk package.
 
         Args:
-            pwn_request_package (Dict): The pwn request risk package.
+            pwn_request_package (dict): The pwn request risk package.
         """
         self.pwn_req_risk.append(pwn_request_package)
 
@@ -139,14 +138,14 @@ class Repository():
         """
         Check if there are any pwn request risks.
         """
-        return len(self.pwn_req_risk) > 0
+        return bool(self.pwn_req_risk)
 
-    def set_injection(self, injection_package: Dict):
+    def set_injection(self, injection_package: dict):
         """
         Set an injection risk package.
 
         Args:
-            injection_package (Dict): The injection risk package.
+            injection_package (dict): The injection risk package.
         """
         self.injection_risk.append(injection_package)
 
@@ -154,33 +153,33 @@ class Repository():
         """
         Check if there are any injection risks.
         """
-        return len(self.injection_risk) > 0
+        return bool(self.injection_risk)
 
-    def set_secrets(self, secrets: List[Secret]):
+    def set_secrets(self, secrets: list[Secret]):
         """
         Set secrets that are attached to this repository.
 
         Args:
-            secrets (List[Secret]): List of repo level secret wrapper objects.
+            secrets (list[Secret]): List of repo level secret wrapper objects.
         """
         self.secrets = secrets
 
-    def set_runners(self, runners: List[Runner]):
+    def set_runners(self, runners: list[Runner]):
         """
         Set list of self-hosted runners attached at the repository level.
 
         Args:
-            runners (List[Runner]): List of Runner wrapper objects.
+            runners (list[Runner]): List of Runner wrapper objects.
         """
         self.sh_runner_access = True
         self.runners = runners
 
-    def add_self_hosted_workflows(self, workflows: List[str]):
+    def add_self_hosted_workflows(self, workflows: list[str]):
         """
         Add a list of workflow file names that run on self-hosted runners.
 
         Args:
-            workflows (List[str]): List of workflow names.
+            workflows (list[str]): List of workflow names.
         """
         self.sh_workflow_names.extend(workflows)
 
@@ -198,7 +197,7 @@ class Repository():
         """
         Convert the repository to a Gato JSON representation.
         """
-        representation = {
+        return {
             "name": self.name,
             "enum_time": self.enum_time.ctime(),
             "permissions": self.permission_data,
@@ -212,4 +211,3 @@ class Repository():
             "pwn_request_risk": self.pwn_req_risk,
             "injection_risk": self.injection_risk
         }
-        return representation

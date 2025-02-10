@@ -13,14 +13,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import re
 
 from gatox.workflow_parser.components.step import Step
 from gatox.workflow_parser.expression_parser import ExpressionParser
 from gatox.workflow_parser.expression_evaluator import ExpressionEvaluator
+from gatox.configuration.configuration_manager import ConfigurationManager
 
 class Job:
     """Wrapper class for a Github Actions workflow job.
     """
+    LARGER_RUNNER_REGEX_LIST = re.compile(
+        r'(windows|ubuntu)-(22.04|20.04|2019-2022)-(4|8|16|32|64)core-(16|32|64|128|256)gb'
+    )
+    MATRIX_KEY_EXTRACTION_REGEX = re.compile(
+        r'{{\s*matrix\.([\w-]+)\s*}}'
+    )
 
     EVALUATOR = ExpressionEvaluator()
 
@@ -41,6 +49,7 @@ class Job:
         self.has_gate = False
         self.self_hosted_runner = False
         self.sh_callees = []
+        self.evaluated = False
 
         if 'environment' in self.job_data:
             if isinstance(self.job_data['environment'], list):
@@ -80,7 +89,7 @@ class Job:
                     self.has_gate = True
                 self.steps.append(added_step)
 
-    def evaluate_if(self):
+    def evaluateIf(self):
         """Evaluate the If expression by parsing it into an AST
         and then evaluating it in the context of an external user
         triggering it.
@@ -92,8 +101,12 @@ class Job:
                     self.if_condition = f"EVALUATED: {self.if_condition}"
                 else:
                     self.if_condition = f"RESTRICTED: {self.if_condition}"
-            except (ValueError, NotImplementedError, SyntaxError, IndexError):
-                pass
+            except ValueError as ve:
+                self.if_condition = self.if_condition
+            except NotImplementedError as ni:
+                self.if_condition = self.if_condition
+            except (SyntaxError, IndexError) as e:
+                self.if_condition = self.if_condition
             finally:
                 self.evaluated = True
 
@@ -102,23 +115,45 @@ class Job:
     def gated(self):
         """Check if the workflow is gated.
         """
-        return self.has_gate or (self.evaluate_if() and self.evaluate_if().startswith("RESTRICTED"))
+        return self.has_gate or (self.evaluateIf() and self.evaluateIf().startswith("RESTRICTED"))
 
-    def get_job_dependencies(self):
+    def getJobDependencies(self):
         """Returns Job objects for jobs that must complete 
         successfully before this one.
         """
         return self.needs
 
-    def is_caller(self):
+    def isCaller(self):
         """Returns true if the job is a caller (meaning it 
         references a reusable workflow that runs on workflow_call)
         """
         return self.caller
 
+    def isSelfHosted(self):
+        """Returns true if the job is using a self-hosted runner."""
+        return self.self_hosted_runner
+
     def _is_self_hosted(self, runner):
         """Determine if the runner is self-hosted."""
+        if isinstance(runner, list):
+            return any(self._is_single_runner_self_hosted(r) for r in runner)
+        return self._is_single_runner_self_hosted(runner)
+
+    def _is_single_runner_self_hosted(self, runner):
+        """Check if a single runner is self-hosted."""
         return not any(
             runner.startswith(prefix)
             for prefix in ['windows', 'ubuntu', 'macos']
         )
+
+    def __process_runner(self):
+        """
+        Processes the runner for the job.
+        """
+        raise NotImplementedError("Not Implemented!")
+
+    def __process_matrix(self):
+        """
+        Processes the matrix for the job.
+        """
+        raise NotImplementedError("Not Implemented!")

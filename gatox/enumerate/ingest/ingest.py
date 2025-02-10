@@ -48,22 +48,14 @@ class DataIngestor:
                 'stargazers_count': result['stargazers']['totalCount'],
                 'pushed_at': result['pushedAt'],
                 'permissions': {
-                    'pull': result['viewerPermission'] == 'READ' or \
-                      result['viewerPermission'] == 'TRIAGE' or \
-                      result['viewerPermission'] == 'WRITE' or \
-                      result['viewerPermission'] == 'MAINTAIN' or \
-                      result['viewerPermission'] == 'ADMIN',
-                    'push': result['viewerPermission'] == 'WRITE' or \
-                        result['viewerPermission'] == 'MAINTAIN' or \
-                        result['viewerPermission'] == 'ADMIN',
-                    'maintain': result['viewerPermission'] == 'MAINTAIN' or \
-                        result['viewerPermission'] == 'ADMIN',
+                    'pull': result['viewerPermission'] in ['READ', 'TRIAGE', 'WRITE', 'MAINTAIN', 'ADMIN'],
+                    'push': result['viewerPermission'] in ['WRITE', 'MAINTAIN', 'ADMIN'],
                     'admin': result['viewerPermission'] == 'ADMIN'
                 },
                 'archived': result['isArchived'],
                 'isFork': result['isFork'],
-                'allow_forking': result['forkingAllowed'],
-                'environments': []
+                'environments': [],
+                'visibility_type': 'private' if result['isPrivate'] else 'public'
             }
 
             if 'environments' in result and result['environments']:

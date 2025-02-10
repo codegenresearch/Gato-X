@@ -48,14 +48,15 @@ class WorkflowParser():
         """Initialize class with workflow file.
 
         Args:
-            workflow_yml (str): String containing yaml file read in from
+            workflow_wrapper (Workflow): Workflow object containing yaml file read in from
             repository.
-            repo_name (str): Name of the repository.
-            workflow_name (str): name of the workflow file
+            non_default (str, optional): Non-default branch name. Defaults to None.
+
+        Raises:
+            ValueError: If the workflow is invalid.
         """
         if workflow_wrapper.isInvalid():
-            logger.error("Received invalid workflow!")
-            return
+            raise ValueError("Received invalid workflow!")
 
         self.parsed_yml = workflow_wrapper.parsed_yml
         
@@ -81,6 +82,11 @@ class WorkflowParser():
         self.composites = self.extract_referenced_actions()
 
     def is_referenced(self):
+        """Check if the workflow is referenced.
+
+        Returns:
+            bool: Whether the workflow is referenced.
+        """
         return self.external_ref
 
     def has_trigger(self, trigger):
@@ -88,6 +94,7 @@ class WorkflowParser():
 
         Args:
             trigger (str): The trigger to check for.
+
         Returns:
             bool: Whether the workflow has the specified trigger.
         """
@@ -140,6 +147,9 @@ class WorkflowParser():
     def get_vulnerable_triggers(self, alternate=False):
         """Analyze if the workflow is set to execute on potentially risky triggers.
 
+        Args:
+            alternate (str, optional): Alternate trigger to check. Defaults to False.
+
         Returns:
             list: List of triggers within the workflow that could be vulnerable
             to GitHub Actions script injection vulnerabilities.
@@ -174,6 +184,12 @@ class WorkflowParser():
 
     def backtrack_gate(self, needs_name):
         """Attempts to find if a job needed by a specific job has a gate check.
+
+        Args:
+            needs_name (str or list): The name of the job or list of job names to check.
+
+        Returns:
+            bool: Whether any of the needed jobs have a gate check.
         """
         if isinstance(needs_name, list):
             return any(self.backtrack_gate(need) for need in needs_name)
@@ -191,7 +207,7 @@ class WorkflowParser():
         'actions/checkout' action with a 'ref' parameter.
 
         Returns:
-            job_checkouts: List of 'ref' values within the 'actions/checkout' steps.
+            dict: Dictionary of job names with checkout steps and their details.
         """
         job_checkouts = {}
         if 'jobs' not in self.parsed_yml:
@@ -256,6 +272,9 @@ class WorkflowParser():
     def check_pwn_request(self, bypass=False):
         """Check for potential pwn request vulnerabilities.
 
+        Args:
+            bypass (bool, optional): Bypass the check for vulnerable triggers. Defaults to False.
+
         Returns:
             dict: A dictionary containing the job names as keys and a 
             list of potentially vulnerable tokens as values.
@@ -306,6 +325,9 @@ class WorkflowParser():
             
     def check_injection(self, bypass=False):
         """Check for potential script injection vulnerabilities.
+
+        Args:
+            bypass (bool, optional): Bypass the check for vulnerable triggers. Defaults to False.
 
         Returns:
             dict: A dictionary containing the job names as keys and a list 
@@ -387,6 +409,14 @@ class WorkflowParser():
         return sh_jobs
 
     def _is_self_hosted(self, runs_on):
+        """Check if the runner is self-hosted.
+
+        Args:
+            runs_on (str or list): The runner label or list of labels.
+
+        Returns:
+            bool: Whether the runner is self-hosted.
+        """
         if isinstance(runs_on, str):
             return self._check_single_runner(runs_on)
         elif isinstance(runs_on, list):
@@ -394,6 +424,14 @@ class WorkflowParser():
         return False
 
     def _check_single_runner(self, label):
+        """Check if a single runner label is self-hosted.
+
+        Args:
+            label (str): The runner label.
+
+        Returns:
+            bool: Whether the runner label is self-hosted.
+        """
         if 'self-hosted' in label:
             return True
         if self.MATRIX_KEY_EXTRACTION_REGEX.search(label):
@@ -401,6 +439,14 @@ class WorkflowParser():
         return label not in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS'] and not self.LARGER_RUNNER_REGEX_LIST.match(label)
 
     def _check_matrix_runner(self, label):
+        """Check if a matrix runner label is self-hosted.
+
+        Args:
+            label (str): The matrix runner label.
+
+        Returns:
+            bool: Whether the matrix runner label is self-hosted.
+        """
         matrix_match = self.MATRIX_KEY_EXTRACTION_REGEX.search(label)
         if not matrix_match:
             return False

@@ -21,18 +21,22 @@ class OrganizationEnum:
         self.api = api
 
     def __assemble_repo_list(
-            self, organization: str, visibility: str) -> List[Repository]:
-        """Get a list of repositories with the specified visibility.
+            self, organization: str, visibilities: List[str]) -> List[Repository]:
+        """Get a list of repositories with the specified visibility types.
 
         Args:
             organization (str): Name of the organization.
-            visibility (str): Visibility type (public, private, internal).
+            visibilities (List[str]): List of visibility types (public, private, internal).
 
         Returns:
-            List[Repository]: List of repositories with the specified visibility.
+            List[Repository]: List of repositories with the specified visibility types.
         """
-        raw_repos = self.api.check_org_repos(organization, visibility)
-        return [Repository(repo) for repo in raw_repos] if raw_repos else []
+        repos = []
+        for visibility in visibilities:
+            raw_repos = self.api.check_org_repos(organization, visibility)
+            if raw_repos:
+                repos.extend([Repository(repo) for repo in raw_repos])
+        return repos
 
     def construct_repo_enum_list(
             self, organization: Organization) -> List[Repository]:
@@ -45,14 +49,12 @@ class OrganizationEnum:
         Returns:
             List[Repository]: List of repositories to enumerate.
         """
-        org_private_repos = self.__assemble_repo_list(organization.name, 'private')
-        org_internal_repos = self.__assemble_repo_list(organization.name, 'internal')
-        org_public_repos = self.__assemble_repo_list(organization.name, 'public')
+        visibilities = ['private', 'internal', 'public']
+        all_repos = self.__assemble_repo_list(organization.name, visibilities)
 
-        # Combine private and internal repositories
-        org_private_repos.extend(org_internal_repos)
+        org_private_repos = [repo for repo in all_repos if repo.visibility in ['private', 'internal']]
+        org_public_repos = [repo for repo in all_repos if repo.visibility == 'public']
 
-        # Check SSO if there are private repositories
         if org_private_repos:
             sso_enabled = self.api.validate_sso(
                 organization.name, org_private_repos[0].name
@@ -97,8 +99,8 @@ class OrganizationEnum:
 
 
 ### Key Changes:
-1. **Visibility Handling**: Separated the assembly of private and internal repositories and combined them into `org_private_repos`.
-2. **Repository Assembly**: Modified `__assemble_repo_list` to accept a single visibility type and return a list of repositories.
-3. **SSO Handling**: Ensured `org_private_repos` is initialized to an empty list if there are no private repositories.
-4. **Runner Initialization**: Removed the `permissions` argument from the `Runner` initialization to match the expected parameters.
-5. **Code Formatting**: Adjusted formatting for consistency and readability.
+1. **Visibility Handling**: Modified `__assemble_repo_list` to accept a list of visibility types and iterate through them to gather repositories.
+2. **Repository Assembly Logic**: Simplified the logic in `__assemble_repo_list` by using a loop to process each visibility type.
+3. **SSO Handling**: Ensured that the handling of SSO is clear and concise, checking for private repositories before validating SSO.
+4. **Code Consistency**: Ensured that comments and docstrings are consistent and clear.
+5. **Formatting and Readability**: Reviewed and adjusted formatting for consistency and readability.

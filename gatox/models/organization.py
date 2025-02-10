@@ -13,7 +13,7 @@ class Organization:
             user_scopes (list): List of OAuth scopes that the PAT has
             limited_data (bool): Whether limited org_data is present (default: False)
         """
-        self.name = org_data['login']
+        self.name = None
         self.org_admin_user = False
         self.org_admin_scopes = False
         self.org_member = False
@@ -24,20 +24,20 @@ class Organization:
         self.public_repos = []
         self.private_repos = []
 
+        self.name = org_data['login']
+
         # Determine if the user is an admin or member based on available data
         if "billing_email" in org_data and org_data["billing_email"] is not None:
             self.org_member = True
             if "admin:org" in user_scopes:
                 self.org_admin_user = True
                 self.org_admin_scopes = True
-        elif "billing_email" in org_data:
-            self.org_member = True
 
     def set_secrets(self, secrets: list[Secret]):
-        """Set org-level secrets.
+        """Set repo-level secrets.
 
         Args:
-            secrets (list[Secret]): List of secrets at the organization level.
+            secrets (list[Secret]): List of secrets at the repo level.
         """
         self.secrets = secrets
 
@@ -92,8 +92,12 @@ class Organization:
                 "org_runners": [runner.toJSON() for runner in self.runners],
                 "org_secrets": [secret.toJSON() for secret in self.secrets],
                 "sso_access": self.sso_enabled,
-                "public_repos": [repository.toJSON() for repository in self.public_repos],
-                "private_repos": [repository.toJSON() for repository in self.private_repos]
+                "public_repos": [
+                    repository.toJSON() for repository in self.public_repos
+                ],
+                "private_repos": [
+                    repository.toJSON() for repository in self.private_repos
+                ]
             }
 
         return representation

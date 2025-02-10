@@ -4,7 +4,7 @@ from gatox.models.runner import Runner
 from gatox.models.secret import Secret
 
 
-class Repository:
+class Repository():
     """
     Simple wrapper class to provide accessor methods against the repository
     JSON response from GitHub.
@@ -24,14 +24,14 @@ class Repository:
 
         self.name = self.repo_data['full_name']
         self.org_name = self.name.split('/')[0]
-        self.secrets = []
-        self.org_secrets = []
+        self.secrets: list[Secret] = []
+        self.org_secrets: list[Secret] = []
         self.sh_workflow_names = []
         self.enum_time = datetime.datetime.now()
         self.permission_data = self.repo_data['permissions']
         self.sh_runner_access = False
-        self.accessible_runners = []
-        self.runners = []
+        self.accessible_runners: list[Runner] = []
+        self.runners: list[Runner] = []
         self.pwn_req_risk = []
         self.injection_risk = []
 
@@ -63,7 +63,7 @@ class Repository:
         """
         Check if the repository is private.
         """
-        return self.repo_data['private']
+        return not self.is_public()
 
     def is_archived(self):
         """
@@ -107,7 +107,7 @@ class Repository:
         """
         self.enum_time = datetime.datetime.now()
 
-    def set_accessible_org_secrets(self, secrets):
+    def set_accessible_org_secrets(self, secrets: list[Secret]):
         """
         Set organization secrets that can be read using a workflow in this repository.
 
@@ -116,7 +116,7 @@ class Repository:
         """
         self.org_secrets = secrets
 
-    def set_pwn_request(self, pwn_request_package):
+    def set_pwn_request(self, pwn_request_package: dict):
         """
         Set a pwn request risk package.
 
@@ -125,7 +125,7 @@ class Repository:
         """
         self.pwn_req_risk.append(pwn_request_package)
 
-    def clear_pwn_request(self, workflow_name):
+    def clear_pwn_request(self, workflow_name: str):
         """
         Remove a pwn request entry since it's a false positive.
 
@@ -140,7 +140,7 @@ class Repository:
         """
         return len(self.pwn_req_risk) > 0
 
-    def set_injection(self, injection_package):
+    def set_injection(self, injection_package: dict):
         """
         Set an injection risk package.
 
@@ -155,7 +155,7 @@ class Repository:
         """
         return len(self.injection_risk) > 0
 
-    def set_secrets(self, secrets):
+    def set_secrets(self, secrets: list[Secret]):
         """
         Set secrets that are attached to this repository.
 
@@ -164,7 +164,7 @@ class Repository:
         """
         self.secrets = secrets
 
-    def set_runners(self, runners):
+    def set_runners(self, runners: list[Runner]):
         """
         Set list of self-hosted runners attached at the repository level.
 
@@ -174,7 +174,7 @@ class Repository:
         self.sh_runner_access = True
         self.runners = runners
 
-    def add_self_hosted_workflows(self, workflows):
+    def add_self_hosted_workflows(self, workflows: list[str]):
         """
         Add a list of workflow file names that run on self-hosted runners.
 
@@ -183,7 +183,7 @@ class Repository:
         """
         self.sh_workflow_names.extend(workflows)
 
-    def add_accessible_runner(self, runner):
+    def add_accessible_runner(self, runner: Runner):
         """
         Add a runner that is accessible by this repo. This runner could be org level or repo level.
 
@@ -193,7 +193,7 @@ class Repository:
         self.sh_runner_access = True
         self.accessible_runners.append(runner)
 
-    def toJSON(self):
+    def toJSON(self) -> dict:
         """
         Convert the repository to a Gato JSON representation.
         """

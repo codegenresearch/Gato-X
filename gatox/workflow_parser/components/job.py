@@ -20,11 +20,11 @@ from gatox.workflow_parser.expression_parser import ExpressionParser
 from gatox.workflow_parser.expression_evaluator import ExpressionEvaluator
 from gatox.configuration.configuration_manager import ConfigurationManager
 
-class Job:
+class Job():
     """Wrapper class for a Github Actions workflow job.
     """
     LARGER_RUNNER_REGEX_LIST = re.compile(
-        r'(windows|ubuntu)-(22.04|20.04|2019-2022)-(4|8|16|32|64)core-(16|32|64|128|256)gb'
+        r'(windows|ubuntu)-(22\.04|20\.04|2019-2022)-(4|8|16|32|64)core-(16|32|64|128|256)gb'
     )
     MATRIX_KEY_EXTRACTION_REGEX = re.compile(
         r'{{\s*matrix\.([\w-]+)\s*}}'
@@ -32,12 +32,12 @@ class Job:
 
     EVALUATOR = ExpressionEvaluator()
 
-    def __init__(self, job_data: dict, job_name: str):
+    def __init__(self, job_data, job_name):
         """Constructor for job wrapper.
         """
         self.job_name = job_name
         self.job_data = job_data
-        self.needs = []
+        self.needs = None
         self.steps = []
         self.env = {}
         self.permissions = []
@@ -52,7 +52,7 @@ class Job:
         self.evaluated = False
 
         if 'environment' in self.job_data:
-            if isinstance(self.job_data['environment'], list):
+            if type(self.job_data['environment']) == list:
                 self.deployments.extend(self.job_data['environment'])
             else:
                 self.deployments.append(self.job_data['environment'])
@@ -135,7 +135,7 @@ class Job:
 
     def _is_self_hosted(self, runner):
         """Determine if the runner is self-hosted."""
-        if isinstance(runner, list):
+        if type(runner) == list:
             return any(self._is_single_runner_self_hosted(r) for r in runner)
         return self._is_single_runner_self_hosted(runner)
 
@@ -146,13 +146,13 @@ class Job:
             for prefix in ['windows', 'ubuntu', 'macos']
         )
 
-    def __process_runner(self):
+    def __process_runner(self, runner):
         """
         Processes the runner for the job.
         """
         raise NotImplementedError("Not Implemented!")
 
-    def __process_matrix(self):
+    def __process_matrix(self, matrix):
         """
         Processes the matrix for the job.
         """

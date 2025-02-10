@@ -31,8 +31,7 @@ class Organization():
         # If fields such as billing email are populated, then the user MUST
         # be an organization owner. If not, then the user is a member (for
         # private repos) or
-        if "billing_email" in org_data and \
-                org_data["billing_email"] is not None:
+        if "billing_email" in org_data and org_data["billing_email"] is not None:
             self.org_admin_user = True
             self.org_member = True
             self.org_admin_scopes = "admin:org" in user_scopes
@@ -52,10 +51,10 @@ class Organization():
         self.secrets = secrets
 
     def set_repository(self, repo: Repository):
-        """Add a single repository to the organization.
+        """Add a single repository object to the organization.
 
         Args:
-            repo (Repository): Single repository to add.
+            repo (Repository): Single repository object to add.
         """
         if repo.is_private():
             self.private_repos.append(repo)
@@ -63,18 +62,18 @@ class Organization():
             self.public_repos.append(repo)
 
     def set_public_repos(self, repos: list[Repository]):
-        """Set the list of public repositories for the organization.
+        """Set the list of public repositories.
 
         Args:
-            repos (List[Repository]): List of Repository wrapper objects.
+            repos (List[Repository]): List of public repositories.
         """
         self.public_repos = repos
 
     def set_private_repos(self, repos: list[Repository]):
-        """Set the list of private repositories for the organization.
+        """Set the list of private repositories.
 
         Args:
-            repos (List[Repository]): List of Repository wrapper objects.
+            repos (List[Repository]): List of private repositories.
         """
         self.private_repos = repos
 
@@ -82,8 +81,7 @@ class Organization():
         """Set a list of runners that the organization can access.
 
         Args:
-            runners (List[Runner]): List of runners that are attached to the
-            organization.
+            runners (List[Runner]): List of runners attached to the organization.
         """
         self.runners = runners
 

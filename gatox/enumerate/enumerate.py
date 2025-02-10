@@ -47,11 +47,8 @@ class Enumerator:
             http_proxy=http_proxy,
             github_url=github_url,
         )
-        self.socks_proxy = socks_proxy
-        self.http_proxy = http_proxy
         self.skip_log = skip_log
         self.output_yaml = output_yaml
-        self.github_url = github_url
         self.output_json = output_json
         self.user_perms = None
 

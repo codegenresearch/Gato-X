@@ -13,8 +13,8 @@ class Organization:
             user_scopes (list): List of OAuth scopes that the PAT has
             limited_data (bool): Whether limited org_data is present (default: False)
         """
-        self.name = org_data['login']
         self.limited_data = limited_data
+        self.name = org_data['login']
         self.public_repos = []
         self.private_repos = []
         self.secrets: list[Secret] = []
@@ -32,10 +32,10 @@ class Organization:
                 self.org_admin_scopes = True
 
     def set_secrets(self, secrets: list[Secret]):
-        """Set organization-level secrets.
+        """Set repo-level secrets.
 
         Args:
-            secrets (list[Secret]): List of secrets at the organization level.
+            secrets (list[Secret]): List of secrets at the repo level.
         """
         self.secrets = secrets
 

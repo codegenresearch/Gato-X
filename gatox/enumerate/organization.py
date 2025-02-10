@@ -109,3 +109,5 @@ class OrganizationEnum:
 6. **Comment Clarity**: Rephrased comments for better clarity.
 7. **Formatting and Indentation**: Reviewed and adjusted formatting and indentation for consistency.
 8. **Variable Naming**: Ensured variable names are consistent with the gold code's style.
+
+This should address the feedback and ensure the code is more aligned with the gold code.

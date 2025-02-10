@@ -26,88 +26,88 @@ class Repository():
         self.org_name = self.name.split('/')[0]
         self.secrets: list[Secret] = []
         self.org_secrets: list[Secret] = []
-        self.sh_workflow_names = []
+        self.sh_workflow_names: list[str] = []
         self.enum_time = datetime.datetime.now()
         self.permission_data = self.repo_data['permissions']
         self.sh_runner_access = False
         self.accessible_runners: list[Runner] = []
         self.runners: list[Runner] = []
-        self.pwn_req_risk = []
-        self.injection_risk = []
+        self.pwn_req_risk: list[dict] = []
+        self.injection_risk: list[dict] = []
 
-    def is_admin(self):
+    def is_admin(self) -> bool:
         """
         Check if the user has admin permissions for the repository.
         """
         return self.permission_data.get('admin', False)
 
-    def is_maintainer(self):
+    def is_maintainer(self) -> bool:
         """
         Check if the user has maintainer permissions for the repository.
         """
         return self.permission_data.get('maintain', False)
 
-    def can_push(self):
+    def can_push(self) -> bool:
         """
         Check if the user can push to the repository.
         """
         return self.permission_data.get('push', False)
 
-    def can_pull(self):
+    def can_pull(self) -> bool:
         """
         Check if the user can pull from the repository.
         """
         return self.permission_data.get('pull', False)
 
-    def is_private(self):
+    def is_private(self) -> bool:
         """
         Check if the repository is private.
         """
-        return not self.is_public()
+        return self.repo_data['private']
 
-    def is_archived(self):
+    def is_archived(self) -> bool:
         """
         Check if the repository is archived.
         """
         return self.repo_data['archived']
 
-    def is_internal(self):
+    def is_internal(self) -> bool:
         """
         Check if the repository is internal.
         """
         return self.repo_data.get('visibility') == 'internal'
 
-    def is_public(self):
+    def is_public(self) -> bool:
         """
         Check if the repository is public.
         """
         return self.repo_data.get('visibility') == 'public'
 
-    def is_fork(self):
+    def is_fork(self) -> bool:
         """
         Check if the repository is a fork.
         """
         return self.repo_data['fork']
 
-    def can_fork(self):
+    def can_fork(self) -> bool:
         """
         Check if the repository can be forked.
         """
         return self.repo_data.get('allow_forking', False)
 
-    def default_path(self):
+    def default_path(self) -> str:
         """
         Get the default path for the repository.
         """
         return f"{self.repo_data['html_url']}/blob/{self.repo_data['default_branch']}"
 
-    def update_time(self):
+    def update_time(self) -> None:
         """
         Update the enumeration timestamp to the current time.
         """
         self.enum_time = datetime.datetime.now()
 
-    def set_accessible_org_secrets(self, secrets: list[Secret]):
+    def set_accessible_org_secrets(self, secrets: list[Secret]) -> None:
         """
         Set organization secrets that can be read using a workflow in this repository.
 
@@ -116,7 +116,7 @@ class Repository():
         """
         self.org_secrets = secrets
 
-    def set_pwn_request(self, pwn_request_package: dict):
+    def set_pwn_request(self, pwn_request_package: dict) -> None:
         """
         Set a pwn request risk package.
 
@@ -125,7 +125,7 @@ class Repository():
         """
         self.pwn_req_risk.append(pwn_request_package)
 
-    def clear_pwn_request(self, workflow_name: str):
+    def clear_pwn_request(self, workflow_name: str) -> None:
         """
         Remove a pwn request entry since it's a false positive.
 
@@ -134,13 +134,13 @@ class Repository():
         """
         self.pwn_req_risk = [element for element in self.pwn_req_risk if element['workflow_name'] != workflow_name]
 
-    def has_pwn_request(self):
+    def has_pwn_request(self) -> bool:
         """
         Check if there are any pwn request risks.
         """
         return len(self.pwn_req_risk) > 0
 
-    def set_injection(self, injection_package: dict):
+    def set_injection(self, injection_package: dict) -> None:
         """
         Set an injection risk package.
 
@@ -149,13 +149,13 @@ class Repository():
         """
         self.injection_risk.append(injection_package)
 
-    def has_injection(self):
+    def has_injection(self) -> bool:
         """
         Check if there are any injection risks.
         """
         return len(self.injection_risk) > 0
 
-    def set_secrets(self, secrets: list[Secret]):
+    def set_secrets(self, secrets: list[Secret]) -> None:
         """
         Set secrets that are attached to this repository.
 
@@ -164,7 +164,7 @@ class Repository():
         """
         self.secrets = secrets
 
-    def set_runners(self, runners: list[Runner]):
+    def set_runners(self, runners: list[Runner]) -> None:
         """
         Set list of self-hosted runners attached at the repository level.
 
@@ -174,7 +174,7 @@ class Repository():
         self.sh_runner_access = True
         self.runners = runners
 
-    def add_self_hosted_workflows(self, workflows: list[str]):
+    def add_self_hosted_workflows(self, workflows: list[str]) -> None:
         """
         Add a list of workflow file names that run on self-hosted runners.
 
@@ -183,7 +183,7 @@ class Repository():
         """
         self.sh_workflow_names.extend(workflows)
 
-    def add_accessible_runner(self, runner: Runner):
+    def add_accessible_runner(self, runner: Runner) -> None:
         """
         Add a runner that is accessible by this repo. This runner could be org level or repo level.
 

@@ -31,8 +31,9 @@ class Organization:
         # Determine if the user is an admin or member based on available data
         if "billing_email" in org_data and org_data["billing_email"] is not None:
             self.org_member = True
-            self.org_admin_user = True
-            self.org_admin_scopes = "admin:org" in user_scopes
+            if "admin:org" in user_scopes:
+                self.org_admin_user = True
+                self.org_admin_scopes = True
         elif "billing_email" in org_data:
             self.org_member = True
             self.org_admin_user = False
@@ -79,10 +80,10 @@ class Organization:
         Args:
             repo (Repository): Repository wrapper object.
         """
-        if repo.is_public():
-            self.public_repos.append(repo)
-        else:
+        if repo.is_private():
             self.private_repos.append(repo)
+        else:
+            self.public_repos.append(repo)
 
     def toJSON(self):
         """Converts the organization to a Gato JSON representation.

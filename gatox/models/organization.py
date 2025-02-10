@@ -30,15 +30,15 @@ class Organization:
 
         # Determine if the user is an admin or member based on available data
         if "billing_email" in org_data and org_data["billing_email"] is not None:
-            self.org_admin_user = True
             self.org_member = True
+            self.org_admin_user = True
             self.org_admin_scopes = "admin:org" in user_scopes
         elif "billing_email" in org_data:
-            self.org_admin_user = False
             self.org_member = True
-        else:
             self.org_admin_user = False
+        else:
             self.org_member = False
+            self.org_admin_user = False
 
     def set_secrets(self, secrets: list[Secret]):
         """Set org-level secrets.
@@ -49,7 +49,7 @@ class Organization:
         self.secrets = secrets
 
     def set_public_repos(self, repos: list[Repository]):
-        """List of public repos for the org.
+        """Set list of public repos for the org.
 
         Args:
             repos (List[Repository]): List of Repository wrapper objects.
@@ -57,7 +57,7 @@ class Organization:
         self.public_repos = repos
 
     def set_private_repos(self, repos: list[Repository]):
-        """List of private repos for the org.
+        """Set list of private repos for the org.
 
         Args:
             repos (List[Repository]): List of Repository wrapper objects.
@@ -72,6 +72,17 @@ class Organization:
             organization.
         """
         self.runners = runners
+
+    def set_repository(self, repo: Repository):
+        """Add a single repository to the organization.
+
+        Args:
+            repo (Repository): Repository wrapper object.
+        """
+        if repo.is_public():
+            self.public_repos.append(repo)
+        else:
+            self.private_repos.append(repo)
 
     def toJSON(self):
         """Converts the organization to a Gato JSON representation.

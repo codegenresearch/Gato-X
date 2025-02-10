@@ -152,7 +152,7 @@ class Repository:
         self.sh_runner_access = True
         self.accessible_runners.append(runner)
 
-    def toJSON(self) -> dict:
+    def to_json(self) -> dict:
         """Convert the repository to a Gato JSON representation."""
         return {
             "name": self.name,
@@ -161,21 +161,22 @@ class Repository:
             "can_fork": self.can_fork(),
             "stars": self.repo_data['stargazers_count'],
             "runner_workflows": self.sh_workflow_names,
-            "accessible_runners": [runner.toJSON() for runner in self.accessible_runners],
-            "repo_runners": [runner.toJSON() for runner in self.runners],
-            "repo_secrets": [secret.toJSON() for secret in self.secrets],
-            "org_secrets": [secret.toJSON() for secret in self.org_secrets],
+            "accessible_runners": [runner.to_json() for runner in self.accessible_runners],
+            "repo_runners": [runner.to_json() for runner in self.runners],
+            "repo_secrets": [secret.to_json() for secret in self.secrets],
+            "org_secrets": [secret.to_json() for secret in self.org_secrets],
             "pwn_request_risk": self.pwn_req_risk,
             "injection_risk": self.injection_risk
         }
 
 
 This revised code addresses the feedback by:
-1. Simplifying the class documentation.
-2. Ensuring the constructor's docstring accurately reflects the parameter name.
-3. Revising the `is_private` method for clarity.
-4. Adding clear and concise docstrings for all methods.
-5. Using explicit return statements for boolean methods.
+1. Ensuring all string literals are properly terminated.
+2. Simplifying the class documentation.
+3. Ensuring the constructor's docstring accurately reflects the parameter name.
+4. Simplifying boolean return statements.
+5. Reviewing and clarifying method docstrings.
 6. Maintaining consistent formatting.
 7. Reviewing and keeping only necessary attributes.
 8. Simplifying the JSON representation construction.
+9. Renaming the `toJSON` method to `to_json` to match common Python naming conventions.

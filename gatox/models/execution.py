@@ -1,63 +1,63 @@
 import datetime
 
-from gatox.models.organization import Organization
-from gatox.models.organization import Repository
+from gatox.models.organization import Organization, Repository
 
 
 class Execution:
-    """Simple wrapper class to provide accessor methods against a full Gato
-    execution run.
-    """
+    """A wrapper class to provide accessor methods for a full Gato execution run."""
 
     def __init__(self):
-        """Initialize wrapper class."""
+        """Initialize the wrapper class with default values."""
         self.user_details = None
         self.organizations: list[Organization] = []
         self.repositories: list[Repository] = []
         self.timestamp = datetime.datetime.now()
 
     def add_organizations(self, organizations: list[Organization]):
-        """Add list of organization wrapper objects.
+        """Add a list of organization wrapper objects.
 
         Args:
-            organizations (List[Organization]): List of org wrappers.
+            organizations (list[Organization]): List of organization wrappers.
         """
-        if organizations:
-            self.organizations = organizations
+        if not all(isinstance(org, Organization) for org in organizations):
+            raise ValueError("All items in the organizations list must be Organization instances.")
+        self.organizations = organizations
 
     def add_repositories(self, repositories: list[Repository]):
-        """Add list of organization wrapper objects.
+        """Add a list of repository wrapper objects.
 
         Args:
-            organizations (List[Organization]): List of org wrappers.
+            repositories (list[Repository]): List of repository wrappers.
         """
-        if repositories:
-            self.repositories = repositories
+        if not all(isinstance(repo, Repository) for repo in repositories):
+            raise ValueError("All items in the repositories list must be Repository instances.")
+        self.repositories = repositories
 
-    def set_user_details(self, user_details):
-        """_summary_
+    def set_user_details(self, user_details: dict):
+        """Set the user details.
 
         Args:
             user_details (dict): Details about the user's permissions.
         """
+        if not isinstance(user_details, dict):
+            raise ValueError("User details must be provided as a dictionary.")
         self.user_details = user_details
 
-    def toJSON(self):
-        """Converts the run to Gato JSON representation"""
+    def to_json(self):
+        """Convert the execution run to a Gato JSON representation.
 
-        if self.user_details:
-            representation = {
-                "username": self.user_details["user"],
-                "scopes": self.user_details["scopes"],
-                "enumeration": {
-                    "timestamp": self.timestamp.ctime(),
-                    "organizations": [
-                        organization.toJSON() for organization in self.organizations
-                    ],
-                    "repositories": [
-                        repository.toJSON() for repository in self.repositories
-                    ],
-                },
-            }
+        Returns:
+            dict: JSON representation of the execution run.
+        """
+        if not self.user_details:
+            raise ValueError("User details must be set before converting to JSON.")
 
-            return representation
+        return {
+            "username": self.user_details.get("user", "unknown"),
+            "scopes": self.user_details.get("scopes", []),
+            "enumeration": {
+                "timestamp": self.timestamp.ctime(),
+                "organizations": [org.to_json() for org in self.organizations],
+                "repositories": [repo.to_json() for repo in self.repositories],
+            },
+        }

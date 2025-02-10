@@ -200,5 +200,6 @@ class GqlQueries:
 4. **Chunk Size in Comments**: Updated comments to accurately reflect the behavior of the code.
 5. **Formatting and Indentation**: Ensured consistent formatting and indentation throughout the code.
 6. **Variable Naming**: Ensured that variable names and their usage are consistent with the gold code.
+7. **List Comprehension**: Ensured that the list comprehension for `node_ids` is structured similarly to the gold code.
 
 These changes should address the feedback and resolve the test failures.

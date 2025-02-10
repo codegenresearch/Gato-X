@@ -104,7 +104,7 @@ class Enumerator:
         for org in orgs:
             Output.tabbed(f"{Output.bright(org)}")
 
-        return [Organization({'login': org}, self.user_perms['scopes'], True) for org in orgs]
+        return [Organization({'login': org, 'allow_forking': True}, self.user_perms['scopes'], True) for org in orgs]
 
     def self_enumeration(self):
         """Enumerates all organizations associated with the authenticated user.
@@ -155,7 +155,8 @@ class Enumerator:
         if not details:
             Output.warn(
                 f"Unable to query the org: {Output.bright(org)}! Ensure the "
-                "organization exists!")
+                "organization exists!"
+            )
             return False
 
         organization = Organization(details, self.user_perms['scopes'])
@@ -208,8 +209,6 @@ class Enumerator:
                 
                 self.repo_e.enumerate_repository(repo, large_org_enum=len(enum_list) > 25)
                 self.repo_e.enumerate_repository_secrets(repo)
-
-                organization.set_repository(repo)
 
                 Recommender.print_repo_secrets(
                     self.user_perms['scopes'],

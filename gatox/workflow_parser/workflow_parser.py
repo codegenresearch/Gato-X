@@ -55,6 +55,8 @@ class WorkflowParser:
             raise ValueError("Received invalid workflow!")
 
         self.parsed_yml = workflow_wrapper.parsed_yml
+        if self.parsed_yml is None:
+            self.parsed_yml = {}
         self.jobs = [Job(job_data, job_name) for job_name, job_data in self.parsed_yml.get('jobs', {}).items()]
         self.raw_yaml = workflow_wrapper.workflow_contents
         self.repo_name = workflow_wrapper.repo_name
@@ -152,11 +154,11 @@ class WorkflowParser:
         if not self.parsed_yml or 'on' not in self.parsed_yml:
             return vulnerable_triggers
         triggers = self.parsed_yml['on']
-        if isinstance(triggers, list):
+        if type(triggers) == list:
             for trigger in triggers:
                 if trigger in risky_triggers:
                     vulnerable_triggers.append(trigger)
-        elif isinstance(triggers, dict):
+        elif type(triggers) == dict:
             for trigger, trigger_conditions in triggers.items():
                 if trigger in risky_triggers:
                     if trigger_conditions and 'types' in trigger_conditions:
@@ -178,7 +180,7 @@ class WorkflowParser:
         Returns:
             bool: True if a gate check is found, False otherwise.
         """
-        if isinstance(needs_name, list):
+        if type(needs_name) == list:
             for need in needs_name:
                 if self.backtrack_gate(need):
                     return True
@@ -425,13 +427,13 @@ class WorkflowParser:
                         # We only need ONE to be self hosted, others can be
                         # GitHub hosted
                         for key in os_list:
-                            if isinstance(key, str):
+                            if type(key) == str:
                                 if key not in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS'] \
                                     and not self.LARGER_RUNNER_REGEX_LIST.match(key):
                                     sh_jobs.append((jobname, job_details))
                                     break
                 else:
-                    if isinstance(runs_on, list):
+                    if type(runs_on) == list:
                         for label in runs_on:
                             if label in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS']:
                                 break
@@ -439,7 +441,7 @@ class WorkflowParser:
                                 break
                         else:
                             sh_jobs.append((jobname, job_details))
-                    elif isinstance(runs_on, str):
+                    elif type(runs_on) == str:
                         if runs_on in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS']:
                             break
                         if self.LARGER_RUNNER_REGEX_LIST.match(runs_on):

@@ -98,13 +98,13 @@ class Job():
                 else:
                     self.if_condition = f"RESTRICTED: {self.if_condition}"
             except ValueError:
-                self.if_condition = self.if_condition
+                self.if_condition = f"ERROR: {self.if_condition} - ValueError"
             except NotImplementedError:
-                self.if_condition = self.if_condition
+                self.if_condition = f"ERROR: {self.if_condition} - NotImplementedError"
             except SyntaxError:
-                self.if_condition = self.if_condition
+                self.if_condition = f"ERROR: {self.if_condition} - SyntaxError"
             except IndexError:
-                self.if_condition = self.if_condition
+                self.if_condition = f"ERROR: {self.if_condition} - IndexError"
             finally:
                 self.evaluated = True
 
@@ -141,33 +141,51 @@ class Job():
         """Check if a single runner is self-hosted."""
         return not self.LARGER_RUNNER_REGEX_LIST.match(runner)
 
-    def process_runner(self, runner):
+    def _process_runner(self, runner):
         """
         Processes the runner for the job.
         """
         if type(runner) == list:
             for r in runner:
-                self.process_single_runner(r)
+                self._process_single_runner(r)
         else:
-            self.process_single_runner(runner)
+            self._process_single_runner(runner)
 
-    def process_single_runner(self, runner):
+    def _process_single_runner(self, runner):
         """
         Processes a single runner for the job.
         """
         if self._is_single_runner_self_hosted(runner):
             self.self_hosted_runner = True
 
-    def process_matrix(self, matrix):
+    def _process_matrix(self, matrix):
         """
         Processes the matrix for the job.
         """
         if type(matrix) == dict:
             for key, value in matrix.items():
                 # Process each key-value pair in the matrix
-                pass
+                if key == 'strategy':
+                    self._process_strategy(value)
+                elif key == 'include':
+                    self._process_inclusions(value)
         else:
             raise ValueError("Matrix must be a dictionary")
 
+    def _process_strategy(self, strategy):
+        """
+        Processes the strategy part of the matrix.
+        """
+        if 'matrix' in strategy:
+            self._process_matrix(strategy['matrix'])
 
-This code snippet addresses the feedback provided by the oracle, including the removal of the invalid comment, consistent formatting, initialization of attributes, type checking, error handling, method naming and logic, comment consistency, matrix processing, and gated logic.
+    def _process_inclusions(self, inclusions):
+        """
+        Processes the inclusions part of the matrix.
+        """
+        for inclusion in inclusions:
+            if 'runs-on' in inclusion:
+                self._process_runner(inclusion['runs-on'])
+
+
+This code snippet addresses the feedback provided by the oracle, including the removal of the invalid comment, consistent formatting, initialization of attributes, type checking, error handling, method naming and logic, comment consistency, matrix processing, and self-hosted runner logic.

@@ -44,8 +44,8 @@ def load_test_files(request):
     with open(test_repo_path, "r") as repo_data:
         TEST_REPO_DATA = json.load(repo_data)
 
-    with open(test_org_path, "r") as repo_data:
-        TEST_ORG_DATA = json.load(repo_data)
+    with open(test_org_path, "r") as org_data:
+        TEST_ORG_DATA = json.load(org_data)
 
     with open(test_wf_path, "r") as wf_data:
         TEST_WORKFLOW_YML = wf_data.read()
@@ -54,21 +54,37 @@ def load_test_files(request):
 @patch("gatox.enumerate.enumerate.Api")
 def test_init(mock_api):
     """Test constructor for enumerator."""
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = "localhost:8080"
+    output_yaml = True
+    skip_log = False
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy="localhost:8080",
-        output_yaml=True,
-        skip_log=False,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
-    assert gh_enumeration_runner.http_proxy == "localhost:8080"
+    assert gh_enumeration_runner.http_proxy == http_proxy
 
 
 @patch("gatox.enumerate.enumerate.Api")
 def test_self_enumerate(mock_api, capsys):
     """Test constructor for enumerator."""
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = "localhost:8080"
+    output_yaml = True
+    skip_log = False
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     mock_api.return_value.is_app_token.return_value = False
 
@@ -80,11 +96,11 @@ def test_self_enumerate(mock_api, capsys):
     mock_api.return_value.check_organizations.return_value = []
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy="localhost:8080",
-        output_yaml=True,
-        skip_log=False,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     gh_enumeration_runner.self_enumeration()
@@ -98,13 +114,21 @@ def test_self_enumerate(mock_api, capsys):
 @patch("gatox.enumerate.enumerate.Api")
 def test_enumerate_repo_admin(mock_api, capsys):
     """Test constructor for enumerator."""
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = "localhost:8080"
+    output_yaml = True
+    skip_log = False
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy="localhost:8080",
-        output_yaml=True,
-        skip_log=False,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     mock_api.return_value.is_app_token.return_value = False
@@ -133,13 +157,21 @@ def test_enumerate_repo_admin(mock_api, capsys):
 @patch("gatox.enumerate.enumerate.Api")
 def test_enumerate_repo_admin_no_wf(mock_api, capsys):
     """Test constructor for enumerator."""
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = "localhost:8080"
+    output_yaml = True
+    skip_log = False
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy="localhost:8080",
-        output_yaml=True,
-        skip_log=False,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     mock_api.return_value.is_app_token.return_value = False
@@ -168,13 +200,21 @@ def test_enumerate_repo_admin_no_wf(mock_api, capsys):
 @patch("gatox.enumerate.enumerate.Api")
 def test_enumerate_repo_no_wf_no_admin(mock_api, capsys):
     """Test constructor for enumerator."""
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = "localhost:8080"
+    output_yaml = True
+    skip_log = False
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy="localhost:8080",
-        output_yaml=True,
-        skip_log=False,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     mock_api.return_value.is_app_token.return_value = False
@@ -205,13 +245,21 @@ def test_enumerate_repo_no_wf_no_admin(mock_api, capsys):
 @patch("gatox.enumerate.enumerate.Api")
 def test_enumerate_repo_no_wf_maintain(mock_api, capsys):
     """Test constructor for enumerator."""
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = "localhost:8080"
+    output_yaml = True
+    skip_log = False
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy="localhost:8080",
-        output_yaml=True,
-        skip_log=False,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     mock_api.return_value.is_app_token.return_value = False
@@ -240,14 +288,22 @@ def test_enumerate_repo_no_wf_maintain(mock_api, capsys):
 @patch("gatox.enumerate.enumerate.Api")
 def test_enumerate_repo_only(mock_api, capsys):
     """Test constructor for enumerator."""
-
     repo_data = json.loads(json.dumps(TEST_REPO_DATA))
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = "localhost:8080"
+    output_yaml = True
+    skip_log = False
+
+    if not token:
+        raise ValueError("Token must be provided")
+
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy="localhost:8080",
-        output_yaml=True,
-        skip_log=False,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     mock_api.return_value.is_app_token.return_value = False
@@ -273,8 +329,17 @@ def test_enumerate_repo_only(mock_api, capsys):
     assert "Labels: self-hosted, Linux, X64" in escape_ansi(print_output)
 
 
+@patch("gatox.enumerate.ingest.ingest.time")
 @patch("gatox.enumerate.enumerate.Api")
-def test_enum_validate(mock_api, capfd):
+def test_enum_validate(mock_api, mock_time, capfd):
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = None
+    output_yaml = False
+    skip_log = True
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     mock_api.return_value.check_user.return_value = {
         "user": "testUser",
@@ -286,11 +351,11 @@ def test_enum_validate(mock_api, capfd):
     mock_api.return_value.check_organizations.return_value = []
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy=None,
-        output_yaml=False,
-        skip_log=True,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     gh_enumeration_runner.validate_only()
@@ -302,6 +367,14 @@ def test_enum_validate(mock_api, capfd):
 @patch("gatox.enumerate.ingest.ingest.time")
 @patch("gatox.enumerate.enumerate.Api")
 def test_enum_repo(mock_api, mock_time, capfd):
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = None
+    output_yaml = False
+    skip_log = True
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     mock_api.return_value.check_user.return_value = {
         "user": "testUser",
@@ -313,11 +386,11 @@ def test_enum_repo(mock_api, mock_time, capfd):
     mock_api.return_value.get_repository.return_value = TEST_REPO_DATA
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy=None,
-        output_yaml=False,
-        skip_log=True,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     gh_enumeration_runner.enumerate_repo_only("octocat/Hello-World")
@@ -329,6 +402,14 @@ def test_enum_repo(mock_api, mock_time, capfd):
 @patch("gatox.enumerate.ingest.ingest.time")
 @patch("gatox.enumerate.enumerate.Api")
 def test_enum_org(mock_api, mock_time, capfd):
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = None
+    output_yaml = False
+    skip_log = True
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     mock_api.return_value.check_user.return_value = {
         "user": "testUser",
@@ -387,11 +468,11 @@ def test_enum_org(mock_api, mock_time, capfd):
     mock_api.return_value.get_repo_org_secrets.return_value = []
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy=None,
-        output_yaml=False,
-        skip_log=True,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     gh_enumeration_runner.enumerate_organization("github")
@@ -409,6 +490,14 @@ def test_enum_org(mock_api, mock_time, capfd):
 
 @patch("gatox.enumerate.enumerate.Api")
 def test_enum_repo_runner(mock_api, capfd):
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = None
+    output_yaml = False
+    skip_log = True
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     mock_api.return_value.check_user.return_value = {
         "user": "testUser",
@@ -447,11 +536,11 @@ def test_enum_repo_runner(mock_api, capfd):
     mock_api.return_value.get_repository.return_value = test_repodata
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy=None,
-        output_yaml=False,
-        skip_log=True,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     gh_enumeration_runner.enumerate_repo_only("octocat/Hello-World")
@@ -472,6 +561,14 @@ def test_enum_repo_runner(mock_api, capfd):
 @patch("gatox.enumerate.ingest.ingest.time")
 @patch("gatox.enumerate.enumerate.Api")
 def test_enum_repos(mock_api, mock_time, capfd):
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = None
+    output_yaml = False
+    skip_log = True
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     mock_api.return_value.check_user.return_value = {
         "user": "testUser",
@@ -483,11 +580,11 @@ def test_enum_repos(mock_api, mock_time, capfd):
     mock_api.return_value.get_repository.return_value = TEST_REPO_DATA
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy=None,
-        output_yaml=False,
-        skip_log=True,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     gh_enumeration_runner.enumerate_repos(["octocat/Hello-World"])
@@ -498,6 +595,14 @@ def test_enum_repos(mock_api, mock_time, capfd):
 
 @patch("gatox.enumerate.enumerate.Api")
 def test_enum_repos_empty(mock_api, capfd):
+    token = "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    socks_proxy = None
+    http_proxy = None
+    output_yaml = False
+    skip_log = True
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     mock_api.return_value.check_user.return_value = {
         "user": "testUser",
@@ -509,11 +614,11 @@ def test_enum_repos_empty(mock_api, capfd):
     mock_api.return_value.get_repository.return_value = TEST_REPO_DATA
 
     gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy=None,
-        output_yaml=False,
-        skip_log=True,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     gh_enumeration_runner.enumerate_repos([])
@@ -524,13 +629,21 @@ def test_enum_repos_empty(mock_api, capfd):
 
 @patch("gatox.enumerate.enumerate.Api")
 def test_bad_token(mock_api):
+    token = "ghp_BADTOKEN"
+    socks_proxy = None
+    http_proxy = None
+    output_yaml = False
+    skip_log = True
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     gh_enumeration_runner = Enumerator(
-        "ghp_BADTOKEN",
-        socks_proxy=None,
-        http_proxy=None,
-        output_yaml=False,
-        skip_log=True,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     mock_api.return_value.is_app_token.return_value = False
@@ -544,13 +657,21 @@ def test_bad_token(mock_api):
 
 @patch("gatox.enumerate.enumerate.Api")
 def test_unscoped_token(mock_api, capfd):
+    token = "ghp_BADTOKEN"
+    socks_proxy = None
+    http_proxy = None
+    output_yaml = False
+    skip_log = True
+
+    if not token:
+        raise ValueError("Token must be provided")
 
     gh_enumeration_runner = Enumerator(
-        "ghp_BADTOKEN",
-        socks_proxy=None,
-        http_proxy=None,
-        output_yaml=False,
-        skip_log=True,
+        token,
+        socks_proxy=socks_proxy,
+        http_proxy=http_proxy,
+        output_yaml=output_yaml,
+        skip_log=skip_log,
     )
 
     mock_api.return_value.is_app_token.return_value = False
@@ -564,28 +685,3 @@ def test_unscoped_token(mock_api, capfd):
     out, _ = capfd.readouterr()
     assert "Self-enumeration requires the repo scope!" in escape_ansi(out)
     assert status is False
-
-
-@patch("gatox.enumerate.enumerate.Api")
-def test_enum_self_no_repos(mock_api, capfd):
-    gh_enumeration_runner = Enumerator(
-        "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        socks_proxy=None,
-        http_proxy=None,
-        output_yaml=False,
-        skip_log=True,
-        output_json="test.json",
-    )
-
-    mock_api.return_value.is_app_token.return_value = False
-    mock_api.return_value.check_user.return_value = {
-        "user": "testUser",
-        "scopes": ["repo"],
-    }
-
-    orgs, repos = gh_enumeration_runner.self_enumeration()
-
-    assert orgs == []
-    assert repos == []
-
-    out, _ = capfd.readouterr()

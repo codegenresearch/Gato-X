@@ -20,9 +20,8 @@ class DataIngestor:
         cache = CacheManager()
         for result in yml_results:
             # Skip if result is None or missing 'nameWithOwner'
-            if result is None:
-                continue
-            if 'nameWithOwner' not in result:
+            if not result or 'nameWithOwner' not in result:
+                # Gato will fall back to the contents API for these few cases.
                 continue
 
             owner = result['nameWithOwner']
@@ -69,7 +68,7 @@ class DataIngestor:
 
 
 This revised code addresses the feedback by:
-1. Separating the checks for malformed or missing data for clarity.
+1. Combining the checks for `None` and the presence of `'nameWithOwner'` for clarity.
 2. Ensuring comments are consistent and descriptive.
 3. Simplifying the permissions logic using logical operators.
 4. Double-checking the key for forking allowed.

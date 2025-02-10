@@ -8,27 +8,28 @@ from gatox.models.runner import Runner
 from gatox.github.api import Api
 
 
-class OrganizationEnum():
-    """Helper class to wrap organization specific enumeration funcionality.
+class OrganizationEnum:
+    """Helper class to wrap organization-specific enumeration functionality.
     """
 
     def __init__(self, api: Api):
-        """Simple init method.
+        """Initialize the OrganizationEnum with a GitHub API wrapper.
 
         Args:
-            api (Api): Insantiated GitHub API wrapper object.
+            api (Api): Instantiated GitHub API wrapper object.
         """
         self.api = api
 
-    def __assemble_repo_list(
-            self, organization: str, visibilities: list) -> List[Repository]:
-        """Get a list of repositories that match the visibility types.
+    def _assemble_repo_list(self, organization: str, visibilities: list) -> List[Repository]:
+        """Retrieve a list of repositories that match the specified visibility types.
 
         Args:
             organization (str): Name of the organization.
-            visibilities (list): List of visibilities (public, private, etc)
-        """
+            visibilities (list): List of visibility types (e.g., 'public', 'private', 'internal').
 
+        Returns:
+            List[Repository]: List of Repository objects.
+        """
         repos = []
         for visibility in visibilities:
             raw_repos = self.api.check_org_repos(organization, visibility)
@@ -37,10 +38,8 @@ class OrganizationEnum():
 
         return repos
 
-    def construct_repo_enum_list(
-            self, organization: Organization) -> List[Repository]:
-        """Constructs a list of repositories that a user has access to within
-        an organization.
+    def construct_repo_enum_list(self, organization: Organization) -> List[Repository]:
+        """Construct a list of repositories that a user has access to within an organization.
 
         Args:
             organization (Organization): Organization wrapper object.
@@ -48,35 +47,33 @@ class OrganizationEnum():
         Returns:
             List[Repository]: List of repositories to enumerate.
         """
-        org_private_repos = self.__assemble_repo_list(
-            organization.name, ['private', 'internal']
-        )
+        org_private_repos = self._assemble_repo_list(organization.name, ['private', 'internal'])
+        org_public_repos = self._assemble_repo_list(organization.name, ['public'])
 
-        # We might legitimately have no private repos despite being a
-        # member.
+        # Determine SSO status if there are private repositories
         if org_private_repos:
-            sso_enabled = self.api.validate_sso(
-                organization.name, org_private_repos[0].name
-            )
+            sso_enabled = self.api.validate_sso(organization.name, org_private_repos[0].name)
             organization.sso_enabled = sso_enabled
         else:
             org_private_repos = []
 
-        org_public_repos = self.__assemble_repo_list(
-            organization.name, ['public']
-        )
+        # Include forking allowance in repository data
+        for repo in org_private_repos + org_public_repos:
+            repo.forking_allowed = self.api.check_forking_allowed(repo.full_name)
 
-        if organization.sso_enabled:
-            return org_private_repos + org_public_repos
-        else:
-            return org_public_repos
+        organization.set_public_repos(org_public_repos)
+        organization.set_private_repos(org_private_repos)
+
+        return org_private_repos + org_public_repos if organization.sso_enabled else org_public_repos
 
     def admin_enum(self, organization: Organization):
-        """Enumeration tasks to perform if the user is an org admin and the
-        token has the necessary scopes.
+        """Perform enumeration tasks if the user is an org admin with the necessary scopes.
+
+        Args:
+            organization (Organization): Organization wrapper object.
         """
         if organization.org_admin_scopes and organization.org_admin_user:
-
+            # Retrieve and set organization runners
             runners = self.api.check_org_runners(organization.name)
             if runners:
                 org_runners = [
@@ -91,10 +88,8 @@ class OrganizationEnum():
                 ]
                 organization.set_runners(org_runners)
 
+            # Retrieve and set organization secrets
             org_secrets = self.api.get_org_secrets(organization.name)
             if org_secrets:
-                org_secrets = [
-                    Secret(secret, organization.name) for secret in org_secrets
-                ]
-
+                org_secrets = [Secret(secret, organization.name) for secret in org_secrets]
                 organization.set_secrets(org_secrets)

@@ -31,11 +31,11 @@ class Organization():
         # If fields such as billing email are populated, then the user MUST
         # be an organization owner. If not, then the user is a member (for
         # private repos) or
-        if ("billing_email" in org_data and
-                org_data["billing_email"] is not None):
+        if "billing_email" in org_data and org_data["billing_email"] is not None:
             self.org_admin_user = True
             self.org_member = True
-            self.org_admin_scopes = "admin:org" in user_scopes
+            if "admin:org" in user_scopes:
+                self.org_admin_scopes = True
         elif "billing_email" in org_data:
             self.org_admin_user = False
             self.org_member = True

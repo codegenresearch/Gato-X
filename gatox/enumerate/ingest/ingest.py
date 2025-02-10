@@ -6,14 +6,14 @@ class DataIngestor:
 
     @staticmethod
     def construct_workflow_cache(yml_results):
-        """Creates a cache of workflow yml files retrieved from GraphQL. Since
-        GraphQL and REST do not have parity, we still need to use REST for most
-        enumeration calls. This method saves off all yml files, so during org
-        level enumeration if we perform yml enumeration the cached file is used
-        instead of making GitHub REST requests.
+        """Creates a cache of workflow yaml files retrieved from graphql. Since
+        graphql and rest do not have parity, we still need to use rest for most
+        enumeration calls. This method saves off all yaml files, so during org
+        level enumeration if we perform yaml enumeration the cached file is used
+        instead of making github rest requests.
 
         Args:
-            yml_results (list): List of results from individual GraphQL queries
+            yml_results (list): List of results from individual graphql queries
             (100 nodes at a time).
         """
 
@@ -21,7 +21,10 @@ class DataIngestor:
         for result in yml_results:
             # If we get any malformed/missing data just skip it and 
             # Gato will fall back to the contents API for these few cases.
-            if not result or 'nameWithOwner' not in result:
+            if not result:
+                continue
+
+            if 'nameWithOwner' not in result:
                 continue
 
             owner = result['nameWithOwner']
@@ -53,7 +56,7 @@ class DataIngestor:
                 'isFork': result['isFork'],
                 'environments': [],
                 'visibility_type': 'private' if result['isPrivate'] else 'public',
-                'forkingAllowed': result['isFork']
+                'allow_forking': result['isFork']
             }
 
             if 'environments' in result and result['environments']:

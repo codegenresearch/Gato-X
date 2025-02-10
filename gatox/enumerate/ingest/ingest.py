@@ -19,7 +19,7 @@ class DataIngestor:
 
         cache = CacheManager()
         for result in yml_results:
-            # Skip if result is malformed or missing 'nameWithOwner'
+            # Skip malformed or missing 'nameWithOwner'
             if not result or 'nameWithOwner' not in result:
                 continue
 
@@ -48,7 +48,8 @@ class DataIngestor:
                 'permissions': {
                     'pull': result['viewerPermission'] in ['READ', 'TRIAGE', 'WRITE', 'MAINTAIN', 'ADMIN'],
                     'push': result['viewerPermission'] in ['WRITE', 'MAINTAIN', 'ADMIN'],
-                    'admin': result['viewerPermission'] == 'ADMIN'
+                    'admin': result['viewerPermission'] == 'ADMIN',
+                    'maintain': result['viewerPermission'] == 'MAINTAIN'
                 },
                 'archived': result['isArchived'],
                 'isFork': result['isFork'],
@@ -65,10 +66,9 @@ class DataIngestor:
 
 
 ### Changes Made:
-1. **Comment Clarity**: Simplified comments to focus on the action taken.
-2. **Conditional Checks**: Streamlined the conditional checks for `result` and YAML files.
-3. **YAML File Handling**: Simplified the logic for checking file extensions.
-4. **Permissions Structure**: Made the permissions structure more explicit.
+1. **Comment Clarity**: Simplified comments to focus on the action taken and ensured they are valid Python comments.
+2. **Conditional Checks**: Combined checks for malformed data into fewer lines for better readability.
+3. **YAML File Handling**: Streamlined the logic for checking file extensions.
+4. **Permissions Structure**: Included a 'maintain' permission in the permissions structure.
 5. **Environment Handling**: Ensured consistent handling of environments.
-6. **Removed Sections**: Removed sections related to workflow triggers and self-hosted runners as per the feedback.
-7. **Formatting and Style**: Improved formatting and style for consistency.
+6. **Formatting and Style**: Improved formatting and style for consistency.

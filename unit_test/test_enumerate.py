@@ -568,3 +568,5 @@ def test_enum_repo_with_no_permissions(mock_api, mock_time, capfd):
 
 8. **Error Handling**:
    - Considered how potential errors or edge cases are handled in the tests, ensuring the code is robust and reliable.
+
+By addressing these points, the code should now be syntactically correct and more aligned with the expected style and structure.

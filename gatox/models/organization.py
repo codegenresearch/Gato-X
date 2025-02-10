@@ -13,18 +13,16 @@ class Organization:
             user_scopes (list): List of OAuth scopes that the PAT has
             limited_data (bool): Whether limited org_data is present (default: False)
         """
-        self.name = None
-        self.org_admin_user = False
-        self.org_admin_scopes = False
-        self.org_member = False
-        self.sso_enabled = False
+        self.name = org_data['login']
         self.limited_data = limited_data
         self.public_repos = []
         self.private_repos = []
         self.secrets: list[Secret] = []
         self.runners: list[Runner] = []
-
-        self.name = org_data['login']
+        self.sso_enabled = False
+        self.org_member = False
+        self.org_admin_user = False
+        self.org_admin_scopes = False
 
         # Determine if the user is an admin or member based on available data
         if "billing_email" in org_data and org_data["billing_email"] is not None:
@@ -34,10 +32,10 @@ class Organization:
                 self.org_admin_scopes = True
 
     def set_secrets(self, secrets: list[Secret]):
-        """Set repo-level secrets.
+        """Set organization-level secrets.
 
         Args:
-            secrets (list[Secret]): List of secrets at the repo level.
+            secrets (list[Secret]): List of secrets at the organization level.
         """
         self.secrets = secrets
 
@@ -72,8 +70,7 @@ class Organization:
         """Set a list of runners that the organization can access.
 
         Args:
-            runners (List[Runner]): List of runners that are attached to the
-            organization.
+            runners (List[Runner]): List of runners that are attached to the organization.
         """
         self.runners = runners
 

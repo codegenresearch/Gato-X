@@ -50,12 +50,14 @@ class DataIngestor:
                 'permissions': {
                     'pull': result['viewerPermission'] in ['READ', 'TRIAGE', 'WRITE', 'MAINTAIN', 'ADMIN'],
                     'push': result['viewerPermission'] in ['WRITE', 'MAINTAIN', 'ADMIN'],
-                    'admin': result['viewerPermission'] == 'ADMIN'
+                    'admin': result['viewerPermission'] == 'ADMIN',
+                    'maintain': result['viewerPermission'] == 'MAINTAIN'
                 },
                 'archived': result['isArchived'],
                 'isFork': result['isFork'],
                 'environments': [],
-                'visibility_type': 'private' if result['isPrivate'] else 'public'
+                'visibility_type': 'private' if result['isPrivate'] else 'public',
+                'allow_forking': result['isFork']
             }
 
             if 'environments' in result and result['environments']:

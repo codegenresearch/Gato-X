@@ -15,7 +15,6 @@ class Organization():
         """
         self.name = None
         self.org_admin_user = False
-        self.org_admin_scopes = False
         self.org_member = False
         self.secrets: list[Secret] = []
         self.runners: list[Runner] = []
@@ -33,8 +32,6 @@ class Organization():
         # private repos) or
         if "billing_email" in org_data and \
                 org_data["billing_email"] is not None:
-            if "admin:org" in user_scopes:
-                self.org_admin_scopes = True
             self.org_admin_user = True
             self.org_member = True
         elif "billing_email" in org_data:
@@ -44,16 +41,19 @@ class Organization():
             self.org_admin_user = False
             self.org_member = False
 
-    def set_secrets(self, secrets: list[Secret]):
-        """Set repo-level secrets.
+    def set_repository(self, repo: Repository):
+        """Add a single repository object to the organization.
 
         Args:
-            secrets (list): List of secrets at the organization level.
+            repo (Repository): Repository to add.
         """
-        self.secrets = secrets
+        if repo.is_private():
+            self.private_repos.append(repo)
+        else:
+            self.public_repos.append(repo)
 
     def set_public_repos(self, repos: list[Repository]):
-        """List of public repos for the org.
+        """Set the list of public repositories for the organization.
 
         Args:
             repos (List[Repository]): List of Repository wrapper objects.
@@ -61,23 +61,12 @@ class Organization():
         self.public_repos = repos
 
     def set_private_repos(self, repos: list[Repository]):
-        """List of private repos for the org.
+        """Set the list of private repositories for the organization.
 
         Args:
             repos (List[Repository]): List of Repository wrapper objects.
         """
         self.private_repos = repos
-
-    def set_repository(self, repo: Repository):
-        """Add a single repository to the organization.
-
-        Args:
-            repo (Repository): Repository to add.
-        """
-        if repo.is_public():
-            self.public_repos.append(repo)
-        elif repo.is_private():
-            self.private_repos.append(repo)
 
     def set_runners(self, runners: list[Runner]):
         """Set a list of runners that the organization can access.
@@ -87,6 +76,14 @@ class Organization():
             organization.
         """
         self.runners = runners
+
+    def set_secrets(self, secrets: list[Secret]):
+        """Set repo-level secrets.
+
+        Args:
+            secrets (list): List of secrets at the organization level.
+        """
+        self.secrets = secrets
 
     def can_access_repo(self, repo: Repository) -> bool:
         """Check if the user can access the repository based on its visibility.
@@ -104,7 +101,7 @@ class Organization():
         return False
 
     def toJSON(self):
-        """Converts the repository to a Gato JSON representation.
+        """Converts the organization to a Gato JSON representation.
         """
         if self.limited_data:
             representation = {

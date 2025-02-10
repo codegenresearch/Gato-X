@@ -35,7 +35,6 @@ class OrganizationEnum:
             raw_repos = self.api.check_org_repos(organization, visibility)
             if raw_repos:
                 repos.extend([Repository(repo) for repo in raw_repos])
-
         return repos
 
     def construct_repo_enum_list(self, organization: Organization) -> List[Repository]:

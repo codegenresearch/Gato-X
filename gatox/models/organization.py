@@ -17,12 +17,12 @@ class Organization:
         self.org_admin_user = False
         self.org_admin_scopes = False
         self.org_member = False
-        self.secrets: list[Secret] = []
-        self.runners: list[Runner] = []
         self.sso_enabled = False
         self.limited_data = limited_data
         self.public_repos = []
         self.private_repos = []
+        self.secrets: list[Secret] = []
+        self.runners: list[Runner] = []
 
         self.name = org_data['login']
 
@@ -79,6 +79,9 @@ class Organization:
 
     def toJSON(self):
         """Converts the organization to a Gato JSON representation.
+
+        Returns:
+            dict: JSON representation of the organization.
         """
         if self.limited_data:
             representation = {

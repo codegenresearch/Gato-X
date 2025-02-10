@@ -29,10 +29,15 @@ class Organization:
 
     def _determine_user_role(self, org_data: dict, user_scopes: list):
         """Determine the user's role within the organization based on the provided data and scopes."""
-        self.org_member = "billing_email" in org_data
-        if self.org_member and "admin:org" in user_scopes:
-            self.org_admin_scopes = True
-            self.org_admin_user = True
+        if "billing_email" in org_data and org_data["billing_email"] is not None:
+            self.org_member = True
+            if "admin:org" in user_scopes:
+                self.org_admin_scopes = True
+                self.org_admin_user = True
+        elif "billing_email" in org_data:
+            self.org_member = True
+        else:
+            self.org_member = False
 
     def set_repository(self, repo: Repository):
         """Add a single repository to the organization based on its visibility.

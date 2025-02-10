@@ -30,54 +30,80 @@ class Enumerator:
         github_url: str = None,
         output_json: str = None,
     ):
-        """Initialize enumeration class with arguments sent by user."""
+        """Initialize enumeration class with arguments sent by user.
+
+        Args:
+            pat (str): GitHub personal access token.
+            socks_proxy (str, optional): Proxy settings for SOCKS proxy. Defaults to None.
+            http_proxy (str, optional): Proxy settings for HTTP proxy. Defaults to None.
+            output_yaml (str, optional): Directory to save all yml files to. Defaults to None.
+            skip_log (bool, optional): If set, then run logs will not be downloaded. Defaults to False.
+            github_url (str, optional): Custom GitHub URL. Defaults to None.
+            output_json (str, optional): JSON file to output enumeration results. Defaults to None.
+        """
         self.api = Api(
             pat,
             socks_proxy=socks_proxy,
             http_proxy=http_proxy,
             github_url=github_url,
         )
+        self.socks_proxy = socks_proxy
+        self.http_proxy = http_proxy
         self.skip_log = skip_log
         self.output_yaml = output_yaml
+        self.github_url = github_url
         self.output_json = output_json
+        self.user_perms = None
 
         self.repo_e = RepositoryEnum(self.api, skip_log, output_yaml)
         self.org_e = OrganizationEnum(self.api)
 
     def __setup_user_info(self):
-        """Sets up user/app token information."""
-        if not self.api.is_app_token():
-            self.user_perms = self.api.check_user()
-            if not self.user_perms:
-                Output.error("This token cannot be used for enumeration!")
-                return False
-            Output.info(
-                "The authenticated user is: "
-                f"{Output.bright(self.user_perms['user'])}"
-            )
-            if self.user_perms["scopes"]:
-                Output.info(
-                    "The GitHub Classic PAT has the following scopes: "
-                    f'{Output.yellow(", ".join(self.user_perms["scopes"]))}'
-                )
+        """Sets up user/app token information.
+
+        Returns:
+            bool: True if user info is successfully set, False otherwise.
+        """
+        if not self.user_perms:
+            if self.api.is_app_token():
+                installation_info = self.api.get_installation_repos()
+                if installation_info and installation_info["total_count"] > 0:
+                    Output.info("Gato-X is using a valid GitHub App installation token!")
+                    self.user_perms = {
+                        "user": "Github App",
+                        "scopes": [],
+                        "name": "GATO-X App Mode",
+                    }
+                    return True
+                else:
+                    Output.error("No repositories found for the GitHub App token!")
+                    return False
             else:
-                Output.warn("The token has no scopes!")
-        else:
-            installation_info = self.api.get_installation_repos()
-            if not installation_info or installation_info["total_count"] == 0:
-                return False
-            Output.info(
-                f"Gato-X is using valid a GitHub App installation token!"
-            )
-            self.user_perms = {
-                "user": "Github App",
-                "scopes": [],
-                "name": "GATO-X App Mode",
-            }
+                self.user_perms = self.api.check_user()
+                if not self.user_perms:
+                    Output.error("This token cannot be used for enumeration!")
+                    return False
+                Output.info(
+                    "The authenticated user is: "
+                    f"{Output.bright(self.user_perms['user'])}"
+                )
+                if self.user_perms["scopes"]:
+                    Output.info(
+                        "The GitHub Classic PAT has the following scopes: "
+                        f'{Output.yellow(", ".join(self.user_perms["scopes"]))}'
+                    )
+                else:
+                    Output.warn("The token has no scopes!")
         return True
 
     def __query_graphql_workflows(self, queries):
-        """Wrapper for querying workflows using the github graphql API."""
+        """Wrapper for querying workflows using the GitHub GraphQL API.
+
+        Args:
+            queries (list): List of GraphQL queries to execute.
+
+        This method uses a thread pool with 3 workers to perform the queries.
+        """
         with ThreadPoolExecutor(max_workers=3) as executor:
             Output.info(f"Querying repositories in {len(queries)} batches!")
             futures = [executor.submit(DataIngestor.perform_query, self.api, q, i) for i, q in enumerate(queries)]
@@ -89,7 +115,11 @@ class Enumerator:
                 DataIngestor.construct_workflow_cache(future.result())
 
     def validate_only(self):
-        """Validates the PAT access and exits."""
+        """Validates the PAT access and exits.
+
+        Returns:
+            list: List of organizations if validation is successful, False otherwise.
+        """
         if not self.__setup_user_info():
             return False
         if "repo" not in self.user_perms["scopes"]:
@@ -104,7 +134,11 @@ class Enumerator:
         return [Organization({"login": org}, self.user_perms["scopes"], True) for org in orgs]
 
     def self_enumeration(self):
-        """Enumerates all organizations associated with the authenticated user."""
+        """Enumerates all organizations associated with the authenticated user.
+
+        Returns:
+            tuple: Tuple containing lists of organization and repository wrappers if successful, False otherwise.
+        """
         if not self.__setup_user_info():
             return False
         if "repo" not in self.user_perms["scopes"]:
@@ -123,7 +157,14 @@ class Enumerator:
         return org_wrappers, repo_wrappers
 
     def enumerate_user(self, user: str):
-        """Enumerate a user's repositories."""
+        """Enumerate a user's repositories.
+
+        Args:
+            user (str): Username of the GitHub user to enumerate.
+
+        Returns:
+            list: List of repository wrappers if successful, False otherwise.
+        """
         if not self.__setup_user_info():
             return False
         repos = self.api.get_user_repos(user)
@@ -136,7 +177,14 @@ class Enumerator:
         return self.enumerate_repos(repos)
 
     def enumerate_organization(self, org: str):
-        """Enumerate an entire organization."""
+        """Enumerate an entire organization.
+
+        Args:
+            org (str): Organization name to enumerate.
+
+        Returns:
+            Organization: Organization wrapper if successful, False otherwise.
+        """
         if not self.__setup_user_info():
             return False
         details = self.api.get_organization_details(org)
@@ -175,7 +223,15 @@ class Enumerator:
         return organization
 
     def enumerate_repo_only(self, repo_name: str, large_enum=False):
-        """Enumerate only a single repository."""
+        """Enumerate only a single repository.
+
+        Args:
+            repo_name (str): Repository name in {Org/Owner}/Repo format.
+            large_enum (bool, optional): Whether to only download run logs when workflow analysis detects runners. Defaults to False.
+
+        Returns:
+            Repository: Repository wrapper if successful, False otherwise.
+        """
         if not self.__setup_user_info():
             return False
         repo = CacheManager().get_repository(repo_name) or Repository(self.api.get_repository(repo_name))
@@ -198,10 +254,19 @@ class Enumerator:
         return repo
 
     def enumerate_repos(self, repo_names: list):
-        """Enumerate a list of repositories."""
-        if not self.__setup_user_info() or not repo_names:
-            Output.error("The list of repositories was empty or token setup failed!")
-            return
+        """Enumerate a list of repositories.
+
+        Args:
+            repo_names (list): List of repository names in {Org/Owner}/Repo format.
+
+        Returns:
+            list: List of repository wrappers if successful, False otherwise.
+        """
+        if not self.__setup_user_info():
+            return False
+        if not repo_names:
+            Output.error("The list of repositories was empty!")
+            return False
         Output.info(
             f"Querying and caching workflow YAML files from {len(repo_names)} repositories!"
         )

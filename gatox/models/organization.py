@@ -15,6 +15,7 @@ class Organization():
         """
         self.name = None
         self.org_admin_user = False
+        self.org_admin_scopes = False
         self.org_member = False
         self.secrets: list[Secret] = []
         self.runners: list[Runner] = []
@@ -34,6 +35,7 @@ class Organization():
                 org_data["billing_email"] is not None:
             self.org_admin_user = True
             self.org_member = True
+            self.org_admin_scopes = "admin:org" in user_scopes
         elif "billing_email" in org_data:
             self.org_admin_user = False
             self.org_member = True
@@ -41,11 +43,19 @@ class Organization():
             self.org_admin_user = False
             self.org_member = False
 
-    def set_repository(self, repo: Repository):
-        """Add a single repository object to the organization.
+    def set_secrets(self, secrets: list[Secret]):
+        """Set repo-level secrets.
 
         Args:
-            repo (Repository): Repository to add.
+            secrets (list): List of secrets at the organization level.
+        """
+        self.secrets = secrets
+
+    def set_repository(self, repo: Repository):
+        """Add a single repository to the organization.
+
+        Args:
+            repo (Repository): Single repository to add.
         """
         if repo.is_private():
             self.private_repos.append(repo)
@@ -77,14 +87,6 @@ class Organization():
         """
         self.runners = runners
 
-    def set_secrets(self, secrets: list[Secret]):
-        """Set repo-level secrets.
-
-        Args:
-            secrets (list): List of secrets at the organization level.
-        """
-        self.secrets = secrets
-
     def can_access_repo(self, repo: Repository) -> bool:
         """Check if the user can access the repository based on its visibility.
 
@@ -111,6 +113,7 @@ class Organization():
             representation = {
                 "name": self.name,
                 "org_admin_user": self.org_admin_user,
+                "org_admin_scopes": self.org_admin_scopes,
                 "org_member": self.org_member,
                 "org_runners": [runner.toJSON() for runner in self.runners],
                 "org_secrets": [secret.toJSON() for secret in self.secrets],

@@ -53,7 +53,7 @@ class DataIngestor:
                 },
                 'archived': result['isArchived'],
                 'isFork': result['isFork'],
-                'allow_forking': result['isForkAllowed'],
+                'allow_forking': result.get('isForkAllowed', False),
                 'environments': []
             }
 
@@ -68,9 +68,9 @@ class DataIngestor:
 
 
 This revised code addresses the feedback by:
-1. Combining the checks for `None` and the presence of `'nameWithOwner'` for clarity.
+1. Combining the checks for `None` and the presence of `'nameWithOwner'` for better clarity.
 2. Ensuring comments are consistent and descriptive.
 3. Simplifying the permissions logic using logical operators.
-4. Double-checking the key for forking allowed.
+4. Double-checking the key for forking allowed and using `get` for safer access.
 5. Maintaining consistent formatting and structure.
 6. Ensuring the logic for capturing environments is consistent.

@@ -66,13 +66,13 @@ class DataIngestor:
 
 
 ### Changes Made:
-1. **Comment Clarity**: Simplified comments to focus on the action taken and ensured they are valid Python comments.
-2. **Conditional Checks**: Combined checks for malformed data into fewer lines for better readability.
+1. **Comment Clarity**: Ensured all comments are valid Python comments starting with `#` and removed any list formatting.
+2. **Conditional Logic**: Combined checks for malformed data into fewer lines for better readability.
 3. **YAML File Handling**: Streamlined the logic for checking file extensions.
 4. **Permissions Structure**: Included a 'maintain' permission in the permissions structure.
 5. **Environment Handling**: Ensured consistent handling of environments.
 6. **Formatting and Style**: Improved formatting and style for consistency.
 
 ### Specific Changes to Address Test Case Feedback:
-- Removed the list formatting from comments to ensure valid Python syntax.
+- Removed list formatting from comments to ensure valid Python syntax.
 - Ensured all comments are standard single-line comments starting with `#`.

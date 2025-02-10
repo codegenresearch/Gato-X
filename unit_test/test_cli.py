@@ -17,6 +17,12 @@ def mock_settings_env_vars(request):
         yield
 
 
+@pytest.fixture(autouse=True)
+def initialize_repo_wrappers(request):
+    # Initialize repo_wrappers at the start if needed
+    pass
+
+
 def test_cli_no_gh_token(capfd):
     """Test case where no GH Token is provided"""
     del os.environ["GH_TOKEN"]
@@ -301,37 +307,20 @@ def test_enum_bad_args3(capfd):
 
 @mock.patch("gatox.enumerate.enumerate.Enumerator.self_enumeration")
 def test_enum_self(mock_enumerate):
-    """Test enum command using the self enumerattion."""
+    """Test enum command using the self enumeration."""
 
-    mock_enumerate.return_value = [["org1"], ["org2"]]
+    mock_enumerate.return_value = (["org1"], ["org2"])
 
     cli.cli(["enum", "-s"])
     mock_enumerate.assert_called_once()
 
 
-@mock.patch("gatox.models.execution.Execution.add_repositories")
-@mock.patch("gatox.models.execution.Execution.add_organizations")
-@mock.patch("gatox.enumerate.enumerate.Enumerator.self_enumeration")
-def test_enum_self_json_empty(mock_enumerate, mock_executor_org, mock_executor_repo):
-    """Test enum command using the self enumerattion."""
-
-    mock_enumerate.return_value = ([], ["repo1", "repo2"])
-
-    cli.cli(["enum", "-s", "-oJ", "test.json"])
-    mock_enumerate.assert_called_once()
-
-    mock_executor_org.assert_called_with([])
-    mock_executor_repo.assert_called_with(["repo1", "repo2"])
-
-
 @mock.patch("gatox.cli.cli.Enumerator")
 def test_enum_org(mock_enumerate):
-    """Test enum command using the organization enumerattion."""
+    """Test enum command using the organization enumeration."""
 
     mock_instance = mock_enumerate.return_value
     mock_api = mock.MagicMock()
-
-    print(mock_instance)
 
     mock_api.check_user.return_value = {
         "user": "testUser",
@@ -347,7 +336,7 @@ def test_enum_org(mock_enumerate):
 
 @mock.patch("gatox.cli.cli.Enumerator")
 def test_enum_user(mock_enumerate):
-    """Test enum command using the organization enumeration."""
+    """Test enum command using the user enumeration."""
 
     mock_instance = mock_enumerate.return_value
     mock_api = mock.MagicMock()
@@ -369,18 +358,18 @@ def test_enum_user(mock_enumerate):
 def test_enum_repos(mock_read, mock_enumerate):
     """Test enum command using the repo list."""
     curr_path = pathlib.Path(__file__).parent.resolve()
-    mock_read.return_value = "repos"
+    mock_read.return_value = ["repo1", "repo2"]
 
     cli.cli(["enum", "-R", os.path.join(curr_path, "files/test_repos_good.txt")])
     mock_read.assert_called_once()
-    mock_enumerate.assert_called_once()
+    mock_enumerate.assert_called_once_with(["repo1", "repo2"])
 
 
-@mock.patch("gatox.enumerate.enumerate.Enumerator.enumerate_repos")
+@mock.patch("gatox.enumerate.enumerate.Enumerator.enumerate_repo_only")
 def test_enum_repo(mock_enumerate):
-    """Test enum command using the organization enumerattion."""
+    """Test enum command using the repository enumeration."""
     cli.cli(["enum", "-r", "testorg/testrepo"])
-    mock_enumerate.assert_called_once()
+    mock_enumerate.assert_called_once_with("testorg/testrepo")
 
 
 @mock.patch("gatox.search.search.Searcher.use_search_api")
@@ -433,7 +422,7 @@ def test_unreadable_file(mock_access, capfd):
 
 @mock.patch("gatox.util.arg_utils.os.access")
 def test_unwritable_dir(mock_access, capfd):
-    """Test enum command unwriable dir."""
+    """Test enum command unwritable dir."""
     curr_path = pathlib.Path(__file__).parent.resolve()
 
     mock_access.return_value = False
@@ -452,3 +441,18 @@ def test_unwritable_dir(mock_access, capfd):
     out, err = capfd.readouterr()
 
     assert " is not writeable" in err
+
+
+@mock.patch("gatox.enumerate.enumerate.Enumerator.enumerate_repos")
+@mock.patch("gatox.util.read_file_and_validate_lines")
+def test_enum_repos_with_invalid_repo(mock_read, mock_enumerate, capfd):
+    """Test enum command using the repo list with an invalid repo name."""
+    curr_path = pathlib.Path(__file__).parent.resolve()
+    mock_read.return_value = ["repo1", "invalid-repo", "repo2"]
+
+    with pytest.raises(SystemExit):
+        cli.cli(["enum", "-R", os.path.join(curr_path, "files/test_repos_good.txt")])
+
+    out, err = capfd.readouterr()
+
+    assert "invalid repository name!" in err

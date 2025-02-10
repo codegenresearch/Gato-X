@@ -5,7 +5,7 @@ from gatox.models.repository import Repository
 
 
 class Execution:
-    """Wrapper class to provide accessor methods for a full Gato execution run."""
+    """Wrapper class for a full Gato execution run."""
 
     def __init__(self):
         """Initialize the wrapper class with default values."""
@@ -20,7 +20,8 @@ class Execution:
         Args:
             organizations (list[Organization]): List of organization wrappers.
         """
-        self.organizations = organizations
+        if organizations:
+            self.organizations = organizations
 
     def add_repositories(self, repositories: list[Repository]):
         """Add a list of repository wrapper objects.
@@ -28,9 +29,10 @@ class Execution:
         Args:
             repositories (list[Repository]): List of repository wrappers.
         """
-        self.repositories = repositories
+        if repositories:
+            self.repositories = repositories
 
-    def set_user_details(self, user_details):
+    def set_user_details(self, user_details: dict):
         """Set the user details.
 
         Args:
@@ -45,7 +47,7 @@ class Execution:
             dict: JSON representation of the execution run.
         """
         if not self.user_details:
-            raise ValueError("User details must be set before converting to JSON.")
+            return {}
 
         return {
             "username": self.user_details["user"],

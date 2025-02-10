@@ -8,12 +8,12 @@ from gatox.models.runner import Runner
 from gatox.github.api import Api
 
 
-class OrganizationEnum():
-    """Helper class to wrap organization specific enumeration functionality.
+class OrganizationEnum:
+    """Helper class to wrap organization-specific enumeration functionality.
     """
 
     def __init__(self, api: Api):
-        """Simple init method.
+        """Initialize the OrganizationEnum with a GitHub API wrapper object.
 
         Args:
             api (Api): Instantiated GitHub API wrapper object.
@@ -21,21 +21,18 @@ class OrganizationEnum():
         self.api = api
 
     def __assemble_repo_list(
-            self, organization: str, visibilities: list) -> List[Repository]:
-        """Get a list of repositories that match the visibility types.
+            self, organization: str, visibility: str) -> List[Repository]:
+        """Get a list of repositories with the specified visibility.
 
         Args:
             organization (str): Name of the organization.
-            visibilities (list): List of visibilities (public, private, etc)
+            visibility (str): Visibility type (public, private, internal).
+
+        Returns:
+            List[Repository]: List of repositories with the specified visibility.
         """
-
-        repos = []
-        for visibility in visibilities:
-            raw_repos = self.api.check_org_repos(organization, visibility)
-            if raw_repos:
-                repos.extend([Repository(repo) for repo in raw_repos])
-
-        return repos
+        raw_repos = self.api.check_org_repos(organization, visibility)
+        return [Repository(repo) for repo in raw_repos] if raw_repos else []
 
     def construct_repo_enum_list(
             self, organization: Organization) -> List[Repository]:
@@ -48,17 +45,21 @@ class OrganizationEnum():
         Returns:
             List[Repository]: List of repositories to enumerate.
         """
-        visibilities = ['private', 'internal', 'public']
-        all_repos = self.__assemble_repo_list(organization.name, visibilities)
+        org_private_repos = self.__assemble_repo_list(organization.name, 'private')
+        org_internal_repos = self.__assemble_repo_list(organization.name, 'internal')
+        org_public_repos = self.__assemble_repo_list(organization.name, 'public')
 
-        org_private_repos = [repo for repo in all_repos if repo.visibility in ['private', 'internal']]
-        org_public_repos = [repo for repo in all_repos if repo.visibility == 'public']
+        # Combine private and internal repositories
+        org_private_repos.extend(org_internal_repos)
 
+        # Check SSO if there are private repositories
         if org_private_repos:
             sso_enabled = self.api.validate_sso(
                 organization.name, org_private_repos[0].name
             )
             organization.sso_enabled = sso_enabled
+        else:
+            org_private_repos = []
 
         organization.set_public_repos(org_public_repos)
         organization.set_private_repos(org_private_repos)
@@ -73,7 +74,6 @@ class OrganizationEnum():
         token has the necessary scopes.
         """
         if organization.org_admin_scopes and organization.org_admin_user:
-
             runners = self.api.check_org_runners(organization.name)
             if runners:
                 org_runners = [
@@ -82,8 +82,7 @@ class OrganizationEnum():
                         machine_name=None,
                         os=runner['os'],
                         status=runner['status'],
-                        labels=runner['labels'],
-                        permissions=runner.get('token_permissions', {})
+                        labels=runner['labels']
                     )
                     for runner in runners['runners']
                 ]
@@ -94,5 +93,12 @@ class OrganizationEnum():
                 org_secrets = [
                     Secret(secret, organization.name) for secret in org_secrets
                 ]
-
                 organization.set_secrets(org_secrets)
+
+
+### Key Changes:
+1. **Visibility Handling**: Separated the assembly of private and internal repositories and combined them into `org_private_repos`.
+2. **Repository Assembly**: Modified `__assemble_repo_list` to accept a single visibility type and return a list of repositories.
+3. **SSO Handling**: Ensured `org_private_repos` is initialized to an empty list if there are no private repositories.
+4. **Runner Initialization**: Removed the `permissions` argument from the `Runner` initialization to match the expected parameters.
+5. **Code Formatting**: Adjusted formatting for consistency and readability.

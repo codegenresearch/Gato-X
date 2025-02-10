@@ -14,7 +14,7 @@ class Execution:
         self.repositories: list[Repository] = []
         self.timestamp = datetime.datetime.now()
 
-    def add_organizations(self, organizations: list[Organization]):
+    def add_organizations(self, organizations):
         """Add a list of organization wrapper objects.
 
         Args:
@@ -23,7 +23,7 @@ class Execution:
         if organizations:
             self.organizations = organizations
 
-    def add_repositories(self, repositories: list[Repository]):
+    def add_repositories(self, repositories):
         """Add a list of repository wrapper objects.
 
         Args:
@@ -32,7 +32,7 @@ class Execution:
         if repositories:
             self.repositories = repositories
 
-    def set_user_details(self, user_details: dict):
+    def set_user_details(self, user_details):
         """Set the user details.
 
         Args:
@@ -54,7 +54,7 @@ class Execution:
             "scopes": self.user_details["scopes"],
             "enumeration": {
                 "timestamp": self.timestamp.ctime(),
-                "organizations": [org.toJSON() for org in self.organizations],
-                "repositories": [repo.toJSON() for repo in self.repositories],
+                "organizations": [organization.toJSON() for organization in self.organizations],
+                "repositories": [repository.toJSON() for repository in self.repositories],
             },
         }

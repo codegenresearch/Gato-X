@@ -6,11 +6,11 @@ class DataIngestor:
 
     @staticmethod
     def construct_workflow_cache(yml_results):
-        """Creates a cache of workflow yml files retrieved from graphQL. Since
-        graphql and REST do not have parity, we still need to use rest for most
+        """Creates a cache of workflow yml files retrieved from GraphQL. Since
+        GraphQL and REST do not have parity, we still need to use REST for most
         enumeration calls. This method saves off all yml files, so during org
         level enumeration if we perform yml enumeration the cached file is used
-        instead of making github REST requests. 
+        instead of making GitHub REST requests.
 
         Args:
             yml_results (list): List of results from individual GraphQL queries
@@ -21,10 +21,7 @@ class DataIngestor:
         for result in yml_results:
             # If we get any malformed/missing data just skip it and 
             # Gato will fall back to the contents API for these few cases.
-            if not result:
-                continue
-                
-            if 'nameWithOwner' not in result:
+            if not result or 'nameWithOwner' not in result:
                 continue
 
             owner = result['nameWithOwner']
@@ -36,8 +33,7 @@ class DataIngestor:
                     if yml_name.lower().endswith('yml') or yml_name.lower().endswith('yaml'):
                         contents = yml_node['object']['text']
                         wf_wrapper = Workflow(owner, contents, yml_name)
-                        
-                        cache.set_workflow(owner, yml_name, wf_wrapper) 
+                        cache.set_workflow(owner, yml_name, wf_wrapper)
 
             repo_data = {
                 'full_name': result['nameWithOwner'],
@@ -57,13 +53,13 @@ class DataIngestor:
                 'isFork': result['isFork'],
                 'environments': [],
                 'visibility_type': 'private' if result['isPrivate'] else 'public',
-                'allow_forking': result['isFork']
+                'forkingAllowed': result['isFork']
             }
 
             if 'environments' in result and result['environments']:
                 # Capture environments not named github-pages
-                envs = [env['node']['name']  for env in result['environments']['edges'] if env['node']['name'] != 'github-pages']
+                envs = [env['node']['name'] for env in result['environments']['edges'] if env['node']['name'] != 'github-pages']
                 repo_data['environments'] = envs
-                    
+
             repo_wrapper = Repository(repo_data)
             cache.set_repository(repo_wrapper)

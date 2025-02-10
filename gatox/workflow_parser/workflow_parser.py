@@ -102,17 +102,13 @@ class WorkflowParser():
         Returns:
             bool: Whether the file was successfully written.
         """
-        try:
-            Path(os.path.join(dirpath, f'{self.repo_name}')).mkdir(
-                parents=True, exist_ok=True)
+        Path(os.path.join(dirpath, f'{self.repo_name}')).mkdir(
+            parents=True, exist_ok=True)
 
-            with open(os.path.join(
-                    dirpath, f'{self.repo_name}/{self.wf_name}'), 'w') as wf_out:
-                wf_out.write(self.raw_yaml)
-                return True
-        except Exception as e:
-            logger.error(f"Failed to write workflow file: {e}")
-            return False
+        with open(os.path.join(
+                dirpath, f'{self.repo_name}/{self.wf_name}'), 'w') as wf_out:
+            wf_out.write(self.raw_yaml)
+            return True
         
     def extract_referenced_actions(self):
         """
@@ -153,11 +149,11 @@ class WorkflowParser():
         if not self.parsed_yml or 'on' not in self.parsed_yml:
             return vulnerable_triggers
         triggers = self.parsed_yml['on']
-        if isinstance(triggers, list):
+        if type(triggers) == list:
             for trigger in triggers:
                 if trigger in risky_triggers:
                     vulnerable_triggers.append(trigger)
-        elif isinstance(triggers, dict):
+        elif type(triggers) == dict:
             for trigger, trigger_conditions in triggers.items():
                 if trigger in risky_triggers:
                     if trigger_conditions and 'types' in trigger_conditions:
@@ -174,7 +170,7 @@ class WorkflowParser():
     def backtrack_gate(self, needs_name):
         """Attempts to find if a job needed by a specific job has a gate check.
         """
-        if isinstance(needs_name, list):
+        if type(needs_name) == list:
             for need in needs_name:
                 if self.backtrack_gate(need):
                     return True
@@ -415,13 +411,13 @@ class WorkflowParser():
                         # We only need ONE to be self hosted, others can be
                         # GitHub hosted
                         for key in os_list:
-                            if isinstance(key, str):
+                            if type(key) == str:
                                 if key not in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS'] \
                                     and not self.LARGER_RUNNER_REGEX_LIST.match(key):
                                     sh_jobs.append((jobname, job_details))
                                     break
                 else:
-                    if isinstance(runs_on, list):
+                    if type(runs_on) == list:
                         for label in runs_on:
                             if label in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS']:
                                 break
@@ -429,7 +425,7 @@ class WorkflowParser():
                                 break
                         else:
                             sh_jobs.append((jobname, job_details))
-                    elif isinstance(runs_on, str):
+                    elif type(runs_on) == str:
                         if runs_on in ConfigurationManager().WORKFLOW_PARSING['GITHUB_HOSTED_LABELS']:
                             break
                         if self.LARGER_RUNNER_REGEX_LIST.match(runs_on):

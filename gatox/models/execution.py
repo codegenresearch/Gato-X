@@ -21,9 +21,8 @@ class Execution:
         Args:
             organizations (List[Organization]): List of organization wrappers.
         """
-        if not organizations:
-            raise ValueError("The list of organizations cannot be empty.")
-        self.organizations = organizations
+        if organizations:
+            self.organizations = organizations
 
     def add_repositories(self, repositories: List[Repository]):
         """Add a list of repository wrapper objects.
@@ -31,9 +30,8 @@ class Execution:
         Args:
             repositories (List[Repository]): List of repository wrappers.
         """
-        if not repositories:
-            raise ValueError("The list of repositories cannot be empty.")
-        self.repositories = repositories
+        if repositories:
+            self.repositories = repositories
 
     def set_user_details(self, user_details: dict):
         """Set the user details.
@@ -49,7 +47,7 @@ class Execution:
         Returns:
             dict: JSON representation of the execution run.
         """
-        if self.user_details is None:
+        if not self.user_details:
             raise ValueError("User details must be set before converting to JSON.")
 
         return {
@@ -57,7 +55,7 @@ class Execution:
             "scopes": self.user_details["scopes"],
             "enumeration": {
                 "timestamp": self.timestamp.ctime(),
-                "organizations": [organization.toJSON() for organization in self.organizations],
-                "repositories": [repository.toJSON() for repository in self.repositories],
+                "organizations": [org.toJSON() for org in self.organizations],
+                "repositories": [repo.toJSON() for repo in self.repositories],
             },
         }

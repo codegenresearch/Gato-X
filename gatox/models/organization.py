@@ -13,7 +13,7 @@ class Organization:
             user_scopes (list): List of OAuth scopes that the PAT has
             limited_data (bool): Whether limited org_data is present (default: False)
         """
-        self.name = org_data.get('login')
+        self.name = None
         self.org_admin_user = False
         self.org_admin_scopes = False
         self.org_member = False
@@ -24,6 +24,7 @@ class Organization:
         self.public_repos = []
         self.private_repos = []
 
+        self.name = org_data.get('login')
         self._determine_user_role(org_data, user_scopes)
 
     def _determine_user_role(self, org_data: dict, user_scopes: list):
@@ -70,6 +71,17 @@ class Organization:
         """
         self.runners = runners
 
+    def set_repository(self, repo: Repository):
+        """Add a single repository to the organization based on its visibility.
+
+        Args:
+            repo (Repository): Repository wrapper object.
+        """
+        if repo.is_public():
+            self.public_repos.append(repo)
+        else:
+            self.private_repos.append(repo)
+
     def has_admin_scopes(self) -> bool:
         """Check if the user has admin scopes for the organization."""
         return self.org_admin_scopes
@@ -84,10 +96,7 @@ class Organization:
 
     def toJSON(self):
         """Converts the organization to a Gato JSON representation."""
-        if self.limited_data:
-            return {"name": self.name}
-
-        return {
+        representation = {
             "name": self.name,
             "org_admin_user": self.org_admin_user,
             "org_member": self.org_member,
@@ -97,3 +106,8 @@ class Organization:
             "public_repos": [repo.toJSON() for repo in self.public_repos],
             "private_repos": [repo.toJSON() for repo in self.private_repos]
         }
+
+        if self.limited_data:
+            return {"name": self.name}
+
+        return representation

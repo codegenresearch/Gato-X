@@ -1,5 +1,4 @@
 import datetime
-from typing import List
 
 from gatox.models.runner import Runner
 from gatox.models.secret import Secret
@@ -19,118 +18,86 @@ class Repository:
             repo_data (dict): Dictionary from parsing JSON object returned from GitHub
         """
         self.repo_data = repo_data
+        # Temporary hack until full transition to GQL
         if 'environments' not in self.repo_data:
             self.repo_data['environments'] = []
 
         self.name = self.repo_data['full_name']
         self.org_name = self.name.split('/')[0]
-        self.secrets: List[Secret] = []
-        self.org_secrets: List[Secret] = []
-        self.sh_workflow_names: List[str] = []
+        self.secrets = []
+        self.org_secrets = []
+        self.sh_workflow_names = []
         self.enum_time = datetime.datetime.now()
         self.permission_data = self.repo_data['permissions']
         self.sh_runner_access = False
-        self.accessible_runners: List[Runner] = []
-        self.runners: List[Runner] = []
-        self.pwn_req_risk: List[dict] = []
-        self.injection_risk: List[dict] = []
+        self.accessible_runners = []
+        self.runners = []
+        self.pwn_req_risk = []
+        self.injection_risk = []
 
-    def is_admin(self) -> bool:
+    def is_admin(self):
         """
         Check if the user has admin permissions for the repository.
-
-        Returns:
-            bool: True if the user has admin permissions, False otherwise.
         """
         return self.permission_data.get('admin', False)
 
-    def is_maintainer(self) -> bool:
+    def is_maintainer(self):
         """
         Check if the user has maintainer permissions for the repository.
-
-        Returns:
-            bool: True if the user has maintainer permissions, False otherwise.
         """
         return self.permission_data.get('maintain', False)
 
-    def can_push(self) -> bool:
+    def can_push(self):
         """
         Check if the user can push to the repository.
-
-        Returns:
-            bool: True if the user can push, False otherwise.
         """
         return self.permission_data.get('push', False)
 
-    def can_pull(self) -> bool:
+    def can_pull(self):
         """
         Check if the user can pull from the repository.
-
-        Returns:
-            bool: True if the user can pull, False otherwise.
         """
         return self.permission_data.get('pull', False)
 
-    def is_private(self) -> bool:
+    def is_private(self):
         """
         Check if the repository is private.
-
-        Returns:
-            bool: True if the repository is private, False otherwise.
         """
-        return self.repo_data.get('private', False)
+        return self.repo_data['private']
 
-    def is_archived(self) -> bool:
+    def is_archived(self):
         """
         Check if the repository is archived.
-
-        Returns:
-            bool: True if the repository is archived, False otherwise.
         """
-        return self.repo_data.get('archived', False)
+        return self.repo_data['archived']
 
-    def is_internal(self) -> bool:
+    def is_internal(self):
         """
         Check if the repository is internal.
-
-        Returns:
-            bool: True if the repository is internal, False otherwise.
         """
         return self.repo_data.get('visibility') == 'internal'
 
-    def is_public(self) -> bool:
+    def is_public(self):
         """
         Check if the repository is public.
-
-        Returns:
-            bool: True if the repository is public, False otherwise.
         """
         return self.repo_data.get('visibility') == 'public'
 
-    def is_fork(self) -> bool:
+    def is_fork(self):
         """
         Check if the repository is a fork.
-
-        Returns:
-            bool: True if the repository is a fork, False otherwise.
         """
-        return self.repo_data.get('fork', False)
+        return self.repo_data['fork']
 
-    def can_fork(self) -> bool:
+    def can_fork(self):
         """
         Check if the repository can be forked.
-
-        Returns:
-            bool: True if the repository can be forked, False otherwise.
         """
         return self.repo_data.get('allow_forking', False)
 
-    def default_path(self) -> str:
+    def default_path(self):
         """
         Get the default path for the repository.
-
-        Returns:
-            str: The default path URL.
         """
         return f"{self.repo_data['html_url']}/blob/{self.repo_data['default_branch']}"
 
@@ -140,16 +107,16 @@ class Repository:
         """
         self.enum_time = datetime.datetime.now()
 
-    def set_accessible_org_secrets(self, secrets: List[Secret]):
+    def set_accessible_org_secrets(self, secrets):
         """
         Set organization secrets that can be read using a workflow in this repository.
 
         Args:
-            secrets (List[Secret]): List of Secret wrapper objects.
+            secrets (list[Secret]): List of Secret wrapper objects.
         """
         self.org_secrets = secrets
 
-    def set_pwn_request(self, pwn_request_package: dict):
+    def set_pwn_request(self, pwn_request_package):
         """
         Set a pwn request risk package.
 
@@ -158,7 +125,7 @@ class Repository:
         """
         self.pwn_req_risk.append(pwn_request_package)
 
-    def clear_pwn_request(self, workflow_name: str):
+    def clear_pwn_request(self, workflow_name):
         """
         Remove a pwn request entry since it's a false positive.
 
@@ -167,16 +134,13 @@ class Repository:
         """
         self.pwn_req_risk = [element for element in self.pwn_req_risk if element['workflow_name'] != workflow_name]
 
-    def has_pwn_request(self) -> bool:
+    def has_pwn_request(self):
         """
         Check if there are any pwn request risks.
-
-        Returns:
-            bool: True if there are any pwn request risks, False otherwise.
         """
         return len(self.pwn_req_risk) > 0
 
-    def set_injection(self, injection_package: dict):
+    def set_injection(self, injection_package):
         """
         Set an injection risk package.
 
@@ -185,44 +149,41 @@ class Repository:
         """
         self.injection_risk.append(injection_package)
 
-    def has_injection(self) -> bool:
+    def has_injection(self):
         """
         Check if there are any injection risks.
-
-        Returns:
-            bool: True if there are any injection risks, False otherwise.
         """
         return len(self.injection_risk) > 0
 
-    def set_secrets(self, secrets: List[Secret]):
+    def set_secrets(self, secrets):
         """
         Set secrets that are attached to this repository.
 
         Args:
-            secrets (List[Secret]): List of repo level secret wrapper objects.
+            secrets (list[Secret]): List of repo level secret wrapper objects.
         """
         self.secrets = secrets
 
-    def set_runners(self, runners: List[Runner]):
+    def set_runners(self, runners):
         """
         Set list of self-hosted runners attached at the repository level.
 
         Args:
-            runners (List[Runner]): List of Runner wrapper objects.
+            runners (list[Runner]): List of Runner wrapper objects.
         """
         self.sh_runner_access = True
         self.runners = runners
 
-    def add_self_hosted_workflows(self, workflows: List[str]):
+    def add_self_hosted_workflows(self, workflows):
         """
         Add a list of workflow file names that run on self-hosted runners.
 
         Args:
-            workflows (List[str]): List of workflow names.
+            workflows (list[str]): List of workflow names.
         """
         self.sh_workflow_names.extend(workflows)
 
-    def add_accessible_runner(self, runner: Runner):
+    def add_accessible_runner(self, runner):
         """
         Add a runner that is accessible by this repo. This runner could be org level or repo level.
 
@@ -232,12 +193,9 @@ class Repository:
         self.sh_runner_access = True
         self.accessible_runners.append(runner)
 
-    def toJSON(self) -> dict:
+    def toJSON(self):
         """
         Convert the repository to a Gato JSON representation.
-
-        Returns:
-            dict: JSON representation of the repository.
         """
         representation = {
             "name": self.name,

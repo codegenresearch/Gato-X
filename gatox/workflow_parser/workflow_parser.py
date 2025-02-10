@@ -28,7 +28,7 @@ from gatox.models.workflow import Workflow
 logger = logging.getLogger(__name__)
 
 
-class WorkflowParser():
+class WorkflowParser:
     """Parser for YML files.
 
     This class is structured to take a yaml file as input, it will then

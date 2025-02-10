@@ -348,7 +348,7 @@ class Enumerator:
 
 
 ### Key Changes Made:
-1. **Removed Invalid Comment**: Removed any invalid or misplaced comments that could cause syntax errors.
+1. **Removed Invalid Comment**: Ensured there are no invalid or misplaced comments that could cause syntax errors.
 2. **Docstring Consistency**: Ensured all docstrings follow a consistent format, including line breaks and indentation.
 3. **Error Handling**: Reviewed and ensured error messages are clear and consistent with the gold code.
 4. **Return Values**: Double-checked return values to ensure they match the expected outputs.

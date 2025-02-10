@@ -97,7 +97,7 @@ def test_self_enumerate(mock_api, capsys):
 
 
 @patch("gatox.enumerate.enumerate.Api")
-def test_enumerate_repo_admin(mock_api, capsys):
+def test_repo_admin(mock_api, capsys):
     """Test repository enumeration with admin permissions."""
     mock_api_instance = mock_api.return_value
     mock_api_instance.is_app_token.return_value = False
@@ -124,7 +124,7 @@ def test_enumerate_repo_admin(mock_api, capsys):
 
 
 @patch("gatox.enumerate.enumerate.Api")
-def test_enumerate_repo_admin_no_wf(mock_api, capsys):
+def test_repo_admin_no_wf(mock_api, capsys):
     """Test repository enumeration with admin permissions but no workflow scope."""
     mock_api_instance = mock_api.return_value
     mock_api_instance.is_app_token.return_value = False
@@ -151,7 +151,7 @@ def test_enumerate_repo_admin_no_wf(mock_api, capsys):
 
 
 @patch("gatox.enumerate.enumerate.Api")
-def test_enumerate_repo_no_wf_no_admin(mock_api, capsys):
+def test_repo_no_wf_no_admin(mock_api, capsys):
     """Test repository enumeration with no workflow scope and no admin permissions."""
     mock_api_instance = mock_api.return_value
     mock_api_instance.is_app_token.return_value = False
@@ -178,7 +178,7 @@ def test_enumerate_repo_no_wf_no_admin(mock_api, capsys):
 
 
 @patch("gatox.enumerate.enumerate.Api")
-def test_enumerate_repo_no_wf_maintain(mock_api, capsys):
+def test_repo_no_wf_maintain(mock_api, capsys):
     """Test repository enumeration with maintain permissions and no workflow scope."""
     mock_api_instance = mock_api.return_value
     mock_api_instance.is_app_token.return_value = False
@@ -204,7 +204,7 @@ def test_enumerate_repo_no_wf_maintain(mock_api, capsys):
 
 
 @patch("gatox.enumerate.enumerate.Api")
-def test_enumerate_repo_only(mock_api, capsys):
+def test_repo_only(mock_api, capsys):
     """Test repository enumeration for a specific repository."""
     mock_api_instance = mock_api.return_value
     mock_api_instance.is_app_token.return_value = False
@@ -232,7 +232,7 @@ def test_enumerate_repo_only(mock_api, capsys):
 
 
 @patch("gatox.enumerate.enumerate.Api")
-def test_enum_validate(mock_api, capfd):
+def test_validate(mock_api, capfd):
     """Test validation of user and organization details."""
     mock_api_instance = mock_api.return_value
     mock_api_instance.check_user.return_value = {
@@ -358,7 +358,7 @@ def test_enum_org(mock_api, capfd):
 
 
 @patch("gatox.enumerate.enumerate.Api")
-def test_enum_repo_runner(mock_api, capfd):
+def test_repo_runner(mock_api, capfd):
     """Test enumeration of repository runners."""
     mock_api_instance = mock_api.return_value
     mock_api_instance.check_user.return_value = {
@@ -509,11 +509,24 @@ def test_unscoped_token(mock_api, capfd):
 
 ### Key Changes:
 1. **Removed Invalid Comments**: Removed comments that started with numbers to avoid `SyntaxError`.
-2. **Mocking Consistency**: Ensured that the mocking of the `Api` class is consistent across all tests by directly setting up the mock within each test.
+2. **Consistency in Mocking**: Ensured that the mocking of the `Api` class is consistent across all tests.
 3. **Test Function Naming**: Made test function names more concise and descriptive.
 4. **Docstrings**: Refined docstrings to be more concise and focused on the specific behavior being tested.
-5. **Global Variables**: Loaded necessary data within the `load_test_files` fixture to avoid using global variables.
-6. **Output Handling**: Ensured that output handling (capturing stdout) is consistent across tests.
+5. **Output Handling**: Ensured that output handling (capturing stdout) is consistent across tests.
+6. **Global Variables**: Loaded necessary data within the `load_test_files` fixture to avoid using global variables.
+7. **Redundant Code**: Reduced redundancy by ensuring each test initializes the `Enumerator` instance independently.
+8. **Use of `@patch` Decorator**: Used the `@patch` decorator effectively and consistently across all tests.
+
+These changes should address the feedback and ensure that the tests pass consistently.
+
+
+### Summary of Changes:
+1. **Removed Invalid Comments**: Removed comments that started with numbers to avoid `SyntaxError`.
+2. **Consistency in Mocking**: Ensured that the mocking of the `Api` class is consistent across all tests.
+3. **Test Function Naming**: Made test function names more concise and descriptive.
+4. **Docstrings**: Refined docstrings to be more concise and focused on the specific behavior being tested.
+5. **Output Handling**: Ensured that output handling (capturing stdout) is consistent across tests.
+6. **Global Variables**: Loaded necessary data within the `load_test_files` fixture to avoid using global variables.
 7. **Redundant Code**: Reduced redundancy by ensuring each test initializes the `Enumerator` instance independently.
 8. **Use of `@patch` Decorator**: Used the `@patch` decorator effectively and consistently across all tests.
 

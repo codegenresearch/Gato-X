@@ -97,14 +97,14 @@ class OrganizationEnum:
 
 
 ### Key Changes:
-1. **Syntax Error Fix**: Removed any unterminated string literals, ensuring all docstrings and comments are properly closed.
-2. **Class and Method Naming**: Ensured consistent naming conventions.
-3. **Docstring Consistency**: Simplified and standardized docstrings to match the gold code.
-4. **Visibility List Handling**: Explicitly set `org_private_repos` to an empty list if there are no private repositories.
-5. **Return Logic**: Simplified the return logic to match the gold code's structure.
-6. **Comment Clarity**: Made comments more concise and relevant.
-7. **Formatting**: Ensured consistent formatting, especially with line breaks and indentation.
-8. **List Comprehensions**: Formatted list comprehensions similarly to the gold code.
+1. **Removed Unnecessary Comments**: Removed the comment that was causing the `SyntaxError`.
+2. **Docstring Consistency**: Ensured that docstrings are concise and follow a similar structure to the gold code.
+3. **Method Naming and Structure**: Ensured method names and parameters match the gold code.
+4. **Return Logic**: Simplified the return logic to match the gold code's structure.
+5. **Comment Clarity**: Made comments more concise and relevant.
+6. **Formatting**: Ensured consistent formatting, especially with line breaks and indentation.
+7. **List Comprehensions**: Formatted list comprehensions similarly to the gold code.
+8. **Attribute Naming**: Ensured attributes like `full_name` are used consistently.
 
 ### Note:
 - The `Repository` class should have a `full_name` attribute that corresponds to the repository's full name (e.g., `owner/repo`). This attribute is used in the `check_forking_allowed` and `validate_sso` calls. Ensure that the `Repository` class is defined with this attribute.

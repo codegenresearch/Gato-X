@@ -6,11 +6,11 @@ class DataIngestor:
 
     @staticmethod
     def construct_workflow_cache(yml_results):
-        """Creates a cache of workflow yml files retrieved from graphQL. Since
-        graphql and REST do not have parity, we still need to use rest for most
+        """Creates a cache of workflow yml files retrieved from GraphQL. Since
+        GraphQL and REST do not have parity, we still need to use REST for most
         enumeration calls. This method saves off all yml files, so during org
         level enumeration if we perform yml enumeration the cached file is used
-        instead of making github REST requests. 
+        instead of making GitHub REST requests.
 
         Args:
             yml_results (list): List of results from individual GraphQL queries
@@ -19,25 +19,23 @@ class DataIngestor:
 
         cache = CacheManager()
         for result in yml_results:
-            # If we get any malformed/missing data just skip it and 
-            # Gato will fall back to the contents API for these few cases.
-            if not result:
-                continue
-                
-            if 'nameWithOwner' not in result:
+            # Skip malformed or missing data
+            if not result or 'nameWithOwner' not in result:
                 continue
 
             owner = result['nameWithOwner']
             cache.set_empty(owner)
-            # Empty means no yamls, so just skip.
-            if result['object']:
-                for yml_node in result['object']['entries']:
-                    yml_name = yml_node['name']
-                    if yml_name.lower().endswith('yml') or yml_name.lower().endswith('yaml'):
-                        contents = yml_node['object']['text']
-                        wf_wrapper = Workflow(owner, contents, yml_name)
-                        
-                        cache.set_workflow(owner, yml_name, wf_wrapper) 
+
+            # Skip if no YAML files are present
+            if not result['object']:
+                continue
+
+            for yml_node in result['object']['entries']:
+                yml_name = yml_node['name']
+                if yml_name.lower().endswith(('.yml', '.yaml')):
+                    contents = yml_node['object']['text']
+                    wf_wrapper = Workflow(owner, contents, yml_name)
+                    cache.set_workflow(owner, yml_name, wf_wrapper)
 
             repo_data = {
                 'full_name': result['nameWithOwner'],
@@ -48,28 +46,37 @@ class DataIngestor:
                 'stargazers_count': result['stargazers']['totalCount'],
                 'pushed_at': result['pushedAt'],
                 'permissions': {
-                    'pull': result['viewerPermission'] == 'READ' or \
-                      result['viewerPermission'] == 'TRIAGE' or \
-                      result['viewerPermission'] == 'WRITE' or \
-                      result['viewerPermission'] == 'MAINTAIN' or \
-                      result['viewerPermission'] == 'ADMIN',
-                    'push': result['viewerPermission'] == 'WRITE' or \
-                        result['viewerPermission'] == 'MAINTAIN' or \
-                        result['viewerPermission'] == 'ADMIN',
-                    'maintain': result['viewerPermission'] == 'MAINTAIN' or \
-                        result['viewerPermission'] == 'ADMIN',
+                    'pull': result['viewerPermission'] in ['READ', 'TRIAGE', 'WRITE', 'MAINTAIN', 'ADMIN'],
+                    'push': result['viewerPermission'] in ['WRITE', 'MAINTAIN', 'ADMIN'],
                     'admin': result['viewerPermission'] == 'ADMIN'
                 },
                 'archived': result['isArchived'],
                 'isFork': result['isFork'],
-                'allow_forking': result['forkingAllowed'],
                 'environments': []
             }
 
             if 'environments' in result and result['environments']:
                 # Capture environments not named github-pages
-                envs = [env['node']['name']  for env in result['environments']['edges'] if env['node']['name'] != 'github-pages']
+                envs = [env['node']['name'] for env in result['environments']['edges'] if env['node']['name'] != 'github-pages']
                 repo_data['environments'] = envs
-                    
+
             repo_wrapper = Repository(repo_data)
             cache.set_repository(repo_wrapper)
+
+            # Enhanced security checks for workflow triggers
+            if wf_wrapper.parsed_yml and 'on' in wf_wrapper.parsed_yml:
+                triggers = wf_wrapper.parsed_yml['on']
+                if isinstance(triggers, dict):
+                    for trigger, config in triggers.items():
+                        if trigger == 'push' and 'branches' not in config:
+                            print(f"Warning: Workflow {yml_name} in {owner} triggers on all branches.")
+                        elif trigger == 'pull_request' and 'branches' not in config:
+                            print(f"Warning: Workflow {yml_name} in {owner} triggers on all branches for pull requests.")
+                        elif trigger == 'schedule':
+                            print(f"Warning: Workflow {yml_name} in {owner} has scheduled triggers.")
+
+            # Improved handling of self-hosted runner analysis
+            if 'jobs' in wf_wrapper.parsed_yml:
+                for job_name, job_config in wf_wrapper.parsed_yml['jobs'].items():
+                    if 'runs-on' in job_config and 'self-hosted' in job_config['runs-on']:
+                        print(f"Info: Job {job_name} in workflow {yml_name} in {owner} uses self-hosted runners.")

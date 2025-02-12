@@ -6,16 +6,7 @@ class DataIngestor:
 
     @staticmethod
     def construct_workflow_cache(yml_results):
-        """Creates a cache of workflow yml files retrieved from graphQL. Since
-        graphql and REST do not have parity, we still need to use rest for most
-        enumeration calls. This method saves off all yml files, so during org
-        level enumeration if we perform yml enumeration the cached file is used
-        instead of making github REST requests. 
-
-        Args:
-            yml_results (list): List of results from individual GraphQL queries
-            (100 nodes at a time).
-        """
+        """Creates a cache of workflow yml files retrieved from graphQL. Since\n        graphql and REST do not have parity, we still need to use rest for most\n        enumeration calls. This method saves off all yml files, so during org\n        level enumeration if we perform yml enumeration the cached file is used\n        instead of making github REST requests. \n\n        Args:\n            yml_results (list): List of results from individual GraphQL queries\n            (100 nodes at a time).\n        """
 
         cache = CacheManager()
         for result in yml_results:
@@ -56,13 +47,10 @@ class DataIngestor:
                     'push': result['viewerPermission'] == 'WRITE' or \
                         result['viewerPermission'] == 'MAINTAIN' or \
                         result['viewerPermission'] == 'ADMIN',
-                    'maintain': result['viewerPermission'] == 'MAINTAIN' or \
-                        result['viewerPermission'] == 'ADMIN',
                     'admin': result['viewerPermission'] == 'ADMIN'
                 },
                 'archived': result['isArchived'],
                 'isFork': result['isFork'],
-                'allow_forking': result['forkingAllowed'],
                 'environments': []
             }
 

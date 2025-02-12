@@ -22,8 +22,7 @@ class Execution:
         Args:
             organizations (List[Organization]): List of org wrappers.
         """
-        if organizations:
-            self.organizations = organizations
+        self.organizations = organizations
 
     def add_repositories(self, repositories: list[Repository]):
         """Add list of organization wrapper objects.
@@ -31,8 +30,7 @@ class Execution:
         Args:
             organizations (List[Organization]): List of org wrappers.
         """
-        if repositories:
-            self.repositories = repositories
+        self.repositories = repositories
 
     def set_user_details(self, user_details):
         """_summary_

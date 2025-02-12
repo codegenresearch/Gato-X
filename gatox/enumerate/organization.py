@@ -9,26 +9,15 @@ from gatox.github.api import Api
 
 
 class OrganizationEnum():
-    """Helper class to wrap organization specific enumeration funcionality.
-    """
+    """Helper class to wrap organization specific enumeration functionality.\n    """
 
     def __init__(self, api: Api):
-        """Simple init method.
-
-        Args:
-            api (Api): Insantiated GitHub API wrapper object.
-        """
+        """Simple init method.\n\n        Args:\n            api (Api): Instantiated GitHub API wrapper object.\n        """
         self.api = api
 
     def __assemble_repo_list(
             self, organization: str, visibilities: list) -> List[Repository]:
-        """Get a list of repositories that match the visibility types.
-
-        Args:
-            organization (str): Name of the organization.
-            visibilities (list): List of visibilities (public, private, etc)
-        """
-
+        """Get a list of repositories that match the visibility types.\n\n        Args:\n            organization (str): Name of the organization.\n            visibilities (list): List of visibilities (public, private, etc)\n\n        Returns:\n            List[Repository]: List of repositories.\n        """
         repos = []
         for visibility in visibilities:
             raw_repos = self.api.check_org_repos(organization, visibility)
@@ -39,15 +28,7 @@ class OrganizationEnum():
 
     def construct_repo_enum_list(
             self, organization: Organization) -> List[Repository]:
-        """Constructs a list of repositories that a user has access to within
-        an organization.
-
-        Args:
-            organization (Organization): Organization wrapper object.
-
-        Returns:
-            List[Repository]: List of repositories to enumerate.
-        """
+        """Constructs a list of repositories that a user has access to within\n        an organization.\n\n        Args:\n            organization (Organization): Organization wrapper object.\n\n        Returns:\n            List[Repository]: List of repositories to enumerate.\n        """
         org_private_repos = self.__assemble_repo_list(
             organization.name, ['private', 'internal']
         )
@@ -66,15 +47,22 @@ class OrganizationEnum():
             organization.name, ['public']
         )
 
+        # Enhance organization repository management by setting both public and private repos
+        organization.set_public_repos(org_public_repos)
+        organization.set_private_repos(org_private_repos)
+
+        # Include additional permissions in data ingestion
+        for repo in org_private_repos + org_public_repos:
+            permissions = self.api.get_repo_permissions(organization.name, repo.name)
+            repo.set_permissions(permissions)
+
         if organization.sso_enabled:
             return org_private_repos + org_public_repos
         else:
             return org_public_repos
 
     def admin_enum(self, organization: Organization):
-        """Enumeration tasks to perform if the user is an org admin and the
-        token has the necessary scopes.
-        """
+        """Enumeration tasks to perform if the user is an org admin and the\n        token has the necessary scopes.\n        """
         if organization.org_admin_scopes and organization.org_admin_user:
 
             runners = self.api.check_org_runners(organization.name)
@@ -98,3 +86,8 @@ class OrganizationEnum():
                 ]
 
                 organization.set_secrets(org_secrets)
+
+            # Include additional permissions in data ingestion for org secrets
+            for secret in org_secrets:
+                permissions = self.api.get_secret_permissions(organization.name, secret.name)
+                secret.set_permissions(permissions)

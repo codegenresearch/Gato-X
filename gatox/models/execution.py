@@ -5,9 +5,7 @@ from gatox.models.organization import Repository
 
 
 class Execution:
-    """Simple wrapper class to provide accessor methods against a full Gato
-    execution run.
-    """
+    """Simple wrapper class to provide accessor methods against a full Gato\n    execution run.\n    """
 
     def __init__(self):
         """Initialize wrapper class."""
@@ -17,29 +15,15 @@ class Execution:
         self.timestamp = datetime.datetime.now()
 
     def add_organizations(self, organizations: list[Organization]):
-        """Add list of organization wrapper objects.
-
-        Args:
-            organizations (List[Organization]): List of org wrappers.
-        """
-        if organizations:
-            self.organizations = organizations
+        """Add list of organization wrapper objects.\n\n        Args:\n            organizations (List[Organization]): List of org wrappers.\n        """
+        self.organizations = organizations
 
     def add_repositories(self, repositories: list[Repository]):
-        """Add list of organization wrapper objects.
-
-        Args:
-            organizations (List[Organization]): List of org wrappers.
-        """
-        if repositories:
-            self.repositories = repositories
+        """Add list of organization wrapper objects.\n\n        Args:\n            organizations (List[Organization]): List of org wrappers.\n        """
+        self.repositories = repositories
 
     def set_user_details(self, user_details):
-        """_summary_
-
-        Args:
-            user_details (dict): Details about the user's permissions.
-        """
+        """_summary_\n\n        Args:\n            user_details (dict): Details about the user's permissions.\n        """
         self.user_details = user_details
 
     def toJSON(self):

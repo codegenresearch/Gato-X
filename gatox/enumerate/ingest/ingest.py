@@ -6,38 +6,28 @@ class DataIngestor:
 
     @staticmethod
     def construct_workflow_cache(yml_results):
-        """Creates a cache of workflow yml files retrieved from graphQL. Since
-        graphql and REST do not have parity, we still need to use rest for most
-        enumeration calls. This method saves off all yml files, so during org
-        level enumeration if we perform yml enumeration the cached file is used
-        instead of making github REST requests. 
-
-        Args:
-            yml_results (list): List of results from individual GraphQL queries
-            (100 nodes at a time).
-        """
+        """Creates a cache of workflow YAML files retrieved from GraphQL. Since\n        GraphQL and REST do not have parity, we still need to use REST for most\n        enumeration calls. This method saves off all YAML files, so during org\n        level enumeration, if we perform YAML enumeration, the cached file is used\n        instead of making GitHub REST requests.\n\n        Args:\n            yml_results (list): List of results from individual GraphQL queries\n            (100 nodes at a time).\n        """
 
         cache = CacheManager()
         for result in yml_results:
-            # If we get any malformed/missing data just skip it and 
+            # If we get any malformed/missing data, just skip it and
             # Gato will fall back to the contents API for these few cases.
-            if not result:
-                continue
-                
-            if 'nameWithOwner' not in result:
+            if not result or 'nameWithOwner' not in result:
                 continue
 
             owner = result['nameWithOwner']
             cache.set_empty(owner)
-            # Empty means no yamls, so just skip.
-            if result['object']:
-                for yml_node in result['object']['entries']:
-                    yml_name = yml_node['name']
-                    if yml_name.lower().endswith('yml') or yml_name.lower().endswith('yaml'):
-                        contents = yml_node['object']['text']
-                        wf_wrapper = Workflow(owner, contents, yml_name)
-                        
-                        cache.set_workflow(owner, yml_name, wf_wrapper) 
+
+            # Skip if no YAMLs are present.
+            if not result['object']:
+                continue
+
+            for yml_node in result['object']['entries']:
+                yml_name = yml_node['name']
+                if yml_name.lower().endswith(('.yml', '.yaml')):
+                    contents = yml_node['object']['text']
+                    wf_wrapper = Workflow(owner, contents, yml_name)
+                    cache.set_workflow(owner, yml_name, wf_wrapper)
 
             repo_data = {
                 'full_name': result['nameWithOwner'],
@@ -48,28 +38,43 @@ class DataIngestor:
                 'stargazers_count': result['stargazers']['totalCount'],
                 'pushed_at': result['pushedAt'],
                 'permissions': {
-                    'pull': result['viewerPermission'] == 'READ' or \
-                      result['viewerPermission'] == 'TRIAGE' or \
-                      result['viewerPermission'] == 'WRITE' or \
-                      result['viewerPermission'] == 'MAINTAIN' or \
-                      result['viewerPermission'] == 'ADMIN',
-                    'push': result['viewerPermission'] == 'WRITE' or \
-                        result['viewerPermission'] == 'MAINTAIN' or \
-                        result['viewerPermission'] == 'ADMIN',
-                    'maintain': result['viewerPermission'] == 'MAINTAIN' or \
-                        result['viewerPermission'] == 'ADMIN',
+                    'pull': result['viewerPermission'] in ['READ', 'TRIAGE', 'WRITE', 'MAINTAIN', 'ADMIN'],
+                    'push': result['viewerPermission'] in ['WRITE', 'MAINTAIN', 'ADMIN'],
                     'admin': result['viewerPermission'] == 'ADMIN'
                 },
                 'archived': result['isArchived'],
                 'isFork': result['isFork'],
-                'allow_forking': result['forkingAllowed'],
                 'environments': []
             }
 
             if 'environments' in result and result['environments']:
                 # Capture environments not named github-pages
-                envs = [env['node']['name']  for env in result['environments']['edges'] if env['node']['name'] != 'github-pages']
-                repo_data['environments'] = envs
-                    
+                repo_data['environments'] = [
+                    env['node']['name'] for env in result['environments']['edges']
+                    if env['node']['name'] != 'github-pages'
+                ]
+
             repo_wrapper = Repository(repo_data)
             cache.set_repository(repo_wrapper)
+
+            # Enhanced security check for workflow triggers
+            if not repo_wrapper.is_archived() and repo_wrapper.has_workflows():
+                DataIngestor.check_workflow_triggers(repo_wrapper)
+
+            # Improved handling of self-hosted runner analysis
+            if repo_wrapper.has_self_hosted_runners():
+                DataIngestor.analyze_self_hosted_runners(repo_wrapper)
+
+    @staticmethod
+    def check_workflow_triggers(repo_wrapper):
+        """Checks the triggers of workflows for security concerns.\n\n        Args:\n            repo_wrapper (Repository): The repository wrapper containing workflows.\n        """
+        for workflow in repo_wrapper.workflows:
+            if workflow.is_public() and workflow.triggers_on_pull_request():
+                Output.warn(f"Potential security risk: Workflow {workflow.workflow_name} in {repo_wrapper.full_name} triggers on pull requests.")
+
+    @staticmethod
+    def analyze_self_hosted_runners(repo_wrapper):
+        """Analyzes self-hosted runners for security concerns.\n\n        Args:\n            repo_wrapper (Repository): The repository wrapper containing runner information.\n        """
+        for runner in repo_wrapper.runners:
+            if runner.is_self_hosted() and not runner.has_required_labels():
+                Output.warn(f"Potential security risk: Self-hosted runner {runner.name} in {repo_wrapper.full_name} does not have required labels.")

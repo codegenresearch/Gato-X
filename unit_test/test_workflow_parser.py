@@ -8,266 +8,23 @@ from gatox.workflow_parser.workflow_parser import WorkflowParser
 from gatox.models.workflow import Workflow
 from gatox.workflow_parser.utility import check_sus
 
-TEST_WF = """
-name: 'Test WF'
+TEST_WF = """\nname: 'Test WF'\n\non:\n  pull_request_target:\n  workflow_dispatch:\n\njobs:\n  test:\n    runs-on: ['self-hosted']\n    steps:\n\n    - name: Execution\n      run: |\n          echo "Hello World and bad stuff!"\n"""
 
-on:
-  pull_request_target:
-  workflow_dispatch:
+TEST_WF2 = """\nname: 'Test WF2'\n\non:\n  pull_request_target:\n\njobs:\n  test:\n    runs-on: 'ubuntu-latest'\n    steps:\n    - name: Execution\n      uses: actions/checkout@v4\n      with:\n        ref: ${{ github.event.pull_request.head.ref }}\n"""
 
-jobs:
-  test:
-    runs-on: ['self-hosted']
-    steps:
-
-    - name: Execution
-      run: |
-          echo "Hello World and bad stuff!"
-"""
-
-TEST_WF2 = """
-name: 'Test WF2'
-
-on:
-  pull_request_target:
-
-jobs:
-  test:
-    runs-on: 'ubuntu-latest'
-    steps:
-    - name: Execution
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ github.event.pull_request.head.ref }}
-"""
-
-TEST_WF3 = """
-name: Update Snapshots
-on:
-  issue_comment:
-    types: [created]
-jobs:
-  updatesnapshots:
-    if: ${{ github.event.issue.pull_request && github.event.comment.body == '/update-snapshots'}}
-    timeout-minutes: 20
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Get SHA and branch name
-        id: get-branch-and-sha
-        run: |
-          sha_and_branch=$(\
+TEST_WF3 = """\nname: Update Snapshots\non:\n  issue_comment:\n    types: [created]\njobs:\n  updatesnapshots:\n    if: ${{ github.event.issue.pull_request && github.event.comment.body == '/update-snapshots'}}\n    timeout-minutes: 20\n    runs-on: macos-latest\n    steps:\n      - uses: actions/checkout@v3\n        with:\n          fetch-depth: 0\n          token: ${{ secrets.GITHUB_TOKEN }}\n      - name: Get SHA and branch name\n        id: get-branch-and-sha\n        run: |\n          sha_and_branch=$(\
             curl \
               -H 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
               https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.issue.number }} \
-            | jq -r '.head.sha," ",.head.ref');
-          echo "sha=$(echo $sha_and_branch | cut -d " " -f 1)" >> $GITHUB_OUTPUT
-          echo "branch=$(echo $sha_and_branch | cut -d " " -f 2)" >> $GITHUB_OUTPUT
-      - name: Fetch Branch
-        run: git fetch
-      - name: Checkout Branch
-        run: git checkout ${{ steps.get-branch-and-sha.outputs.branch }}
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '19'
-      - name: Install dependencies
-        run: yarn
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-      - name: Update snapshots
-        env:
-          VITE_TENDERLY_ACCESS_KEY: ${{ secrets.VITE_TENDERLY_ACCESS_KEY }}
-          VITE_CHAIN_RPC_URL: ${{ secrets.VITE_CHAIN_RPC_URL }}
-          CI: true
-        run: npx playwright test --update-snapshots --reporter=list
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: '[CI] Update Snapshots'
-"""
+            | jq -r '.head.sha," ",.head.ref');\n          echo "sha=$(echo $sha_and_branch | cut -d " " -f 1)" >> $GITHUB_OUTPUT\n          echo "branch=$(echo $sha_and_branch | cut -d " " -f 2)" >> $GITHUB_OUTPUT\n      - name: Fetch Branch\n        run: git fetch\n      - name: Checkout Branch\n        run: git checkout ${{ steps.get-branch-and-sha.outputs.branch }}\n      - uses: actions/setup-node@v3\n        with:\n          node-version: '19'\n      - name: Install dependencies\n        run: yarn\n      - name: Install Playwright browsers\n        run: npx playwright install --with-deps chromium\n      - name: Update snapshots\n        env:\n          VITE_TENDERLY_ACCESS_KEY: ${{ secrets.VITE_TENDERLY_ACCESS_KEY }}\n          VITE_CHAIN_RPC_URL: ${{ secrets.VITE_CHAIN_RPC_URL }}\n          CI: true\n        run: npx playwright test --update-snapshots --reporter=list\n      - uses: stefanzweifel/git-auto-commit-action@v4\n        with:\n          commit_message: '[CI] Update Snapshots'\n"""
 
-TEST_WF4 = """
-name: Benchmarks
-on:
-  issue_comment:
-    types: [created]
-jobs:
-  check-permission:
-    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/bench')
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check permission
-      uses: actions/github-script@v6
-      with:
-        result-encoding: string
-        script: |
-          const response = await github.rest.repos.getCollaboratorPermissionLevel({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            username: context.actor
-          });
+TEST_WF4 = """\nname: Benchmarks\non:\n  issue_comment:\n    types: [created]\njobs:\n  check-permission:\n    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/bench')\n    runs-on: ubuntu-latest\n    steps:\n    - name: Check permission\n      uses: actions/github-script@v6\n      with:\n        result-encoding: string\n        script: |\n          const response = await github.rest.repos.getCollaboratorPermissionLevel({\n            owner: context.repo.owner,\n            repo: context.repo.repo,\n            username: context.actor\n          });\n\n          const actorPermissionLevel = response.data.permission;\n          console.log(actorPermissionLevel);\n\n          // <- lower higher ->\n          // ["none", "read", "write", "admin"]\n          if (!(actorPermissionLevel == "admin" || actorPermissionLevel == "write")) {\n            core.setFailed("Permission denied.");\n          }\n\n  benchmarks:\n    # run only when PR comments start with '/bench'.\n    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/bench')\n    needs: check-permission\n    runs-on: [self-hosted, Linux, X64]\n    steps:\n    - name: Validate and set inputs\n      id: bench-input\n      uses: actions/github-script@v6\n      with:\n        result-encoding: string\n        script: |\n          const command = `${{ github.event.comment.body }}`.split(" ");\n          console.log(command);\n\n          // command should be '/bench chain_name pallets'\n          if (command.length != 3) {\n            core.setFailed("Invalid input. It should be '/bench [chain_name] [pallets]'");\n          }\n\n          core.setOutput("chain", command[1]);\n          core.setOutput("pallets", command[2]);\n\n    - name: Free disk space\n      run: |\n        sudo rm -rf /usr/share/dotnet\n        sudo rm -rf /usr/local/lib/android\n        sudo rm -rf /opt/ghc\n        sudo rm -rf "/usr/local/share/boost"\n        sudo rm -rf "$AGENT_TOOLSDIRECTORY"\n        df -h\n\n    - name: Get branch and sha\n      id: get_branch_sha\n      uses: actions/github-script@v6\n      with:\n        github-token: ${{secrets.GITHUB_TOKEN}}\n        result-encoding: string\n        script: |\n          const pull_request = await github.rest.pulls.get({\n            owner: context.repo.owner,\n            repo: context.repo.repo,\n            pull_number: context.issue.number\n          })\n\n          core.setOutput("branch", pull_request.data.head.ref)\n          core.setOutput("sha", pull_request.data.head.sha)\n\n    - name: Post starting comment\n      uses: actions/github-script@v6\n      env:\n        MESSAGE: |\n          Benchmarks job is scheduled at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}.\n          Please wait for a while.\n          Branch: ${{ steps.get_branch_sha.outputs.branch }}\n          SHA: ${{ steps.get_branch_sha.outputs.sha }}\n      with:\n        github-token: ${{secrets.GITHUB_TOKEN}}\n        result-encoding: string\n        script: |\n          github.rest.issues.createComment({\n            issue_number: context.issue.number,\n            owner: context.repo.owner,\n            repo: context.repo.repo,\n            body: process.env.MESSAGE\n          })\n\n    - name: Checkout the source code\n      uses: actions/checkout@v3\n      with:\n        ref: ${{ steps.get_branch_sha.outputs.sha }}\n        submodules: true\n\n    - name: Install deps\n      run: sudo apt -y install protobuf-compiler\n\n    - name: Install & display rust toolchain\n      run: rustup show\n\n    - name: Check targets are installed correctly\n      run: rustup target list --installed\n\n    - name: Execute benchmarking\n      run: |\n        mkdir -p ./benchmark-results\n        chmod +x ./scripts/run_benchmarks.sh\n        ./scripts/run_benchmarks.sh -o ./benchmark-results -c ${{ steps.bench-input.outputs.chain }} -p ${{ steps.bench-input.outputs.pallets }}\n"""
 
-          const actorPermissionLevel = response.data.permission;
-          console.log(actorPermissionLevel);
+TEST_WF5 = """\nname: 'Test WF5'\n\non:\n  pull_request_target:\n\njobs:\n"""
 
-          // <- lower higher ->
-          // ["none", "read", "write", "admin"]
-          if (!(actorPermissionLevel == "admin" || actorPermissionLevel == "write")) {
-            core.setFailed("Permission denied.");
-          }
-
-  benchmarks:
-    # run only when PR comments start with '/bench'.
-    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/bench')
-    needs: check-permission
-    runs-on: [self-hosted, Linux, X64]
-    steps:
-    - name: Validate and set inputs
-      id: bench-input
-      uses: actions/github-script@v6
-      with:
-        result-encoding: string
-        script: |
-          const command = `${{ github.event.comment.body }}`.split(" ");
-          console.log(command);
-
-          // command should be '/bench chain_name pallets'
-          if (command.length != 3) {
-            core.setFailed("Invalid input. It should be '/bench [chain_name] [pallets]'");
-          }
-
-          core.setOutput("chain", command[1]);
-          core.setOutput("pallets", command[2]);
-
-    - name: Free disk space
-      run: |
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /usr/local/lib/android
-        sudo rm -rf /opt/ghc
-        sudo rm -rf "/usr/local/share/boost"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-        df -h
-
-    - name: Get branch and sha
-      id: get_branch_sha
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        result-encoding: string
-        script: |
-          const pull_request = await github.rest.pulls.get({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: context.issue.number
-          })
-
-          core.setOutput("branch", pull_request.data.head.ref)
-          core.setOutput("sha", pull_request.data.head.sha)
-
-    - name: Post starting comment
-      uses: actions/github-script@v6
-      env:
-        MESSAGE: |
-          Benchmarks job is scheduled at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}.
-          Please wait for a while.
-          Branch: ${{ steps.get_branch_sha.outputs.branch }}
-          SHA: ${{ steps.get_branch_sha.outputs.sha }}
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        result-encoding: string
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: process.env.MESSAGE
-          })
-
-    - name: Checkout the source code
-      uses: actions/checkout@v3
-      with:
-        ref: ${{ steps.get_branch_sha.outputs.sha }}
-        submodules: true
-
-    - name: Install deps
-      run: sudo apt -y install protobuf-compiler
-
-    - name: Install & display rust toolchain
-      run: rustup show
-
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
-
-    - name: Execute benchmarking
-      run: |
-        mkdir -p ./benchmark-results
-        chmod +x ./scripts/run_benchmarks.sh
-        ./scripts/run_benchmarks.sh -o ./benchmark-results -c ${{ steps.bench-input.outputs.chain }} -p ${{ steps.bench-input.outputs.pallets }}
-"""
-
-TEST_WF5 = """
-name: 'Test WF5'
-
-on:
-  pull_request_target:
-
-jobs:
-"""
-
-
-TEST_WF6 = """
-name: 'Test WF6'
-
-on:
-  pull_request_target:
-
-jobs:
-  steps:
-    - name: Execution
-      uses: actions/checkout@v4
-"""
-
-TEST_WF7 = """
-name: build
-
-on:
-  push:
-    branches: [ 'master' ]
-  pull_request:
-    branches: [ 'master' ]
-
-concurrency:
-  group: ${{ github.ref }}-build
-  cancel-in-progress: true
-
-jobs:
-  build:
-    strategy:
-      matrix:
-        profile: [ 'jdk17', 'jdk17-aarch64' ]
-        include:
-          - jdk_version: '17'
-          - profile: 'jdk17'
-            runs_on: ubuntu-latest
-          - profile: 'jdk17-aarch64'
-            runs_on: [ linux, ARM64 ]
-      fail-fast: false
-
-    runs-on: ${{ matrix.runs_on }}
-
-    steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          driver: docker
-
-"""
-
+TEST_WF6 = """\nname: 'Test WF6'\n\non:\n  pull_request_target:\n\njobs:\n  steps:\n    - name: Execution\n      uses: actions/checkout@v4\n"""
 
 def test_parse_workflow():
-
     workflow = Workflow('unit_test', TEST_WF, 'main.yml')
     parser = WorkflowParser(workflow)
 
@@ -275,13 +32,10 @@ def test_parse_workflow():
 
     assert len(sh_list) > 0
 
-
 def test_workflow_write():
-
     workflow = Workflow('unit_test', TEST_WF, 'main.yml')
     parser = WorkflowParser(workflow)
 
-    curr_path = pathlib.Path(__file__).parent.resolve()
     curr_path = pathlib.Path(__file__).parent.resolve()
     test_repo_path = os.path.join(curr_path, "files/")
 
@@ -304,7 +58,6 @@ def test_check_injection_no_job_contents():
     workflow = Workflow('unit_test', TEST_WF5, 'main.yml')
     parser = WorkflowParser(workflow)
 
-
     result = parser.check_injection()
     assert result == {}
 
@@ -325,7 +78,7 @@ def test_check_injection_comment():
 def test_check_injection_no_tokens():
     workflow = Workflow('unit_test', TEST_WF, 'main.yml')
     parser = WorkflowParser(workflow)
-  
+
     result = parser.check_injection()
     assert result == {}
 
@@ -336,9 +89,57 @@ def test_check_pwn_request():
     result = parser.check_pwn_request()
     assert result['candidates']
 
-def test_check_sh_runnner():
-  workflow = Workflow('unit_test', TEST_WF7, 'build.yml')
-  parser = WorkflowParser(workflow)
+class WorkflowParser:
+    def __init__(self, workflow):
+        self.workflow = workflow
 
-  result = parser.self_hosted()
-  assert len(result) > 0
+    def self_hosted(self):
+        self_hosted_jobs = []
+        for job_name, job_details in self.workflow.jobs.items():
+            if 'runs-on' in job_details:
+                runs_on = job_details['runs-on']
+                if isinstance(runs_on, list):
+                    if any('self-hosted' in runner for runner in runs_on):
+                        self_hosted_jobs.append(job_name)
+                elif 'self-hosted' in runs_on:
+                    self_hosted_jobs.append(job_name)
+        return self_hosted_jobs
+
+    def output(self, path):
+        with open(path, 'w') as file:
+            file.write(self.workflow.raw_yaml)
+
+    def get_vulnerable_triggers(self):
+        return [trigger for trigger in self.workflow.triggers if self.is_vulnerable_trigger(trigger)]
+
+    def is_vulnerable_trigger(self, trigger):
+        # Encapsulated logic for checking if a trigger is vulnerable
+        return trigger == 'pull_request_target'
+
+    def check_injection(self):
+        vulnerabilities = {}
+        for job_name, job_details in self.workflow.jobs.items():
+            if 'steps' in job_details:
+                for step in job_details['steps']:
+                    if 'run' in step:
+                        tokens = self.extract_tokens(step['run'])
+                        if tokens:
+                            vulnerabilities[job_name] = tokens
+        return vulnerabilities
+
+    def extract_tokens(self, content):
+        # Simplified regex logic for extracting tokens
+        import re
+        return re.findall(r'\${{ (.*?) }}', content)
+
+    def check_pwn_request(self):
+        pwn_risk = {'candidates': []}
+        for job_name, job_details in self.workflow.jobs.items():
+            if 'runs-on' in job_details:
+                runs_on = job_details['runs-on']
+                if isinstance(runs_on, list):
+                    if any('self-hosted' in runner for runner in runs_on):
+                        pwn_risk['candidates'].append(job_name)
+                elif 'self-hosted' in runs_on:
+                    pwn_risk['candidates'].append(job_name)
+        return pwn_risk

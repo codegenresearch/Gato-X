@@ -142,8 +142,7 @@ class WorkflowParser():
         """
         vulnerable_triggers = []
         risky_triggers = ['pull_request_target', 'workflow_run', 
-                          'issue_comment', 'issues', 'discussion_comment', 'discussion'
-                          'fork', 'watch']
+                          'issue_comment', 'issues']
         if alternate:
             risky_triggers = [alternate]
 

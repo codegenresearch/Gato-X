@@ -11,7 +11,6 @@ class GqlQueries():
         isPrivate
         isArchived
         viewerPermission
-        forkingAllowed
         url
         isFork
         pushedAt
@@ -43,7 +42,6 @@ class GqlQueries():
                 nameWithOwner
                 isPrivate
                 isArchived
-                forkingAllowed
                 stargazers {
                     totalCount
                 }
@@ -81,7 +79,6 @@ class GqlQueries():
                     nameWithOwner
                     isPrivate
                     isArchived
-                    forkingAllowed
                     stargazers {
                         totalCount
                     }
